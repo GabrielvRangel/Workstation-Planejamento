@@ -5,6 +5,7 @@
     <title>Workstation BEEP!</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="{{url_for('static', filename='favicon.png')}}">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -17,6 +18,12 @@
             padding: 0px;
             height: 100vh;
             width: 100%;
+        }
+        .scroll{    
+            margin: 3px;
+            color: white;
+            max-height: 100%;
+            overflow-y: scroll;   
         }
         .espaço{
             margin: 5px;
@@ -60,7 +67,7 @@
             background-color: #00AFAA;
             width: 15%;
             height: 100%;
-            box-shadow:  5px 10px #004745;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
             margin: 5px;
             padding: 5px;
         }
@@ -69,7 +76,7 @@
             position: relative;
             width: 90%;
             height: 30%;
-            box-shadow:  5px 10px #004745;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
             margin: 5px;
             padding: 5px;
             left: 5%;
@@ -79,7 +86,7 @@
             position: relative;
             width: 90%;
             height: 20%;
-            box-shadow:  5px 10px #004745;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
             margin: 5px;
             padding: 5px;
             left: 5%;
@@ -89,7 +96,7 @@
             position: relative;
             width: 90%;
             height: 25%;
-            box-shadow:  5px 10px #004745;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
             margin: 5px;
             padding: 5px;
             left: 5%;
@@ -128,41 +135,36 @@
 
 <body>
     <div class="container">
-        <div class="filtros">
+        <form class="filtros" action="/filtrar">
             <div class="espaço">  
                 <h2>Workstation Planejamento</h2>
                 <div class="form-group">
                     <label for="data">Data:</label>
-                    <input type="date" class="form-control" id="data" name="data">
+                    <input type="date" class="form-control" id="no-spin" onkeypress="return false" name="date" min="">
                 </div>
                 <div>
-                    <label for="hub">Hub:</label>
-                    <select class="form-control" name="hub">
-                        <option>Alphaville</option>
-                        <option>Barra</option>
-                        <option>Brasília</option>
-                        <option>Cabo Frio</option>
-                        <option>Campinas</option>
-                        <option>Curitiba</option>
-                        <option>Recife</option>
-                        <option>São Bernardo do Campo</option>
-                        <option>São Cristóvão</option>
-                        <option>Tatuapé</option>
-                        <option>Vila Olímpia</option>
-                        <option>Vitória</option>
+                    <label for="região">Região:</label>
+                    <select class="form-control" name="região">
+                        <option selected>Escolha a região</option>
+                        {% for row in regiões %}
+                        <option value="{{row}}">{{row}}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 </p>
                 <div>
-                    <label for="produto">Produto:</label>
-                    <select class="form-control" name="produto">
-                        <option>VAC</option>
-                        <option>LAB</option>
+                    <label for="bu">Produto:</label>
+                    <select class="form-control" name="bu">
+                        <option selected>Escolha o produto</option>
+                        {% for row in bus %}
+                        <option value="{{row}}">{{row}}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 </p>
+                <button type="submit" class="botão">FILTRAR</button>
             </div>    
-        </div>
+        </form>
 
         <div class="dashboard">
             <div class="dashboard2"> 
@@ -187,11 +189,42 @@
                     código aqui
                 </div>
                 <div class="tabelaescala">
-                    código aqui
+                    <div class="scroll">
+                        <table class="table">
+                            <tr>
+                                {% for escalaheader in escalaheading %}
+                                <th>{{escalaheader}}</th>
+                                {% endfor %}
+                            </tr>
+
+                            {% for quantidade in escalaregião %}
+                            <tr>
+                                <td>{{escalaregião[loop.index-1]}}</td>  
+                                <td>{{escalahub[loop.index-1]}}</td> 
+                                <td>{{escalaescala[loop.index-1]}}</td> 
+                                <td>{{escaladata[loop.index-1]}}</td> 
+                                <td>{{escalaid_colaborador[loop.index-1]}}</td> 
+                                <td>{{escalacolaborador[loop.index-1]}}</td> 
+                                <td>{{escalaid_cargo[loop.index-1]}}</td> 
+                                <td>{{escaladatainicio[loop.index-1]}}</td> 
+                                <td>{{escaladatafim[loop.index-1]}}</td> 
+                                <td>{{escalaausente[loop.index-1]}}</td> 
+                                <td>{{escalabu[loop.index-1]}}</td> 
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <script>   
+            // script para colocar o filtro p/ selecionar apenas as datas a partir de hoje
+            var today = new Date();
+            today.setDate(today.getDate() + 1); 
+            today = today.toISOString().split('T')[0];
+            document.getElementsByName("date")[0].setAttribute('min', today);
+        </script>
 </body>
 
 </html>
