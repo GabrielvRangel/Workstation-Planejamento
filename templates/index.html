@@ -14,6 +14,31 @@
         }
     </style>
     <style>
+        .popup-wrapper {
+            background: rgba(0, 0, 0, .5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .popup{
+            font-family: arial;
+            text-align: center;
+            width: 100%;
+            margin: 10% auto;
+            padding: 20px;
+            background: white;
+            position: relative;
+        }
+        .popup button{
+            color: white;
+            cursor: pointer;
+            padding: 6px 10px;
+            text-decoration: none;
+            background: crimson;
+        }
         .formslots{
             margin-top: 10px;
         }
@@ -192,6 +217,16 @@
 </head>
 
 <body>
+    <div class="popup-wrapper">
+        <div class="popup">
+            <div class="popup-content">
+                <h2>Confirmação</h2>
+                <p>Você tem certeza que desaja abrir slots?</p>
+                <button type="submit">Sim</button>    
+                <button type="submit">Não</button>  
+            </div>
+        </div>
+    </div>
     <div class="container">
         <div class="filtros">
             <form class="espaço" action="/filtrar">
