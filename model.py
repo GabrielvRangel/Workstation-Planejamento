@@ -26,10 +26,10 @@ class Agenda():
 
 class Dashboard():    
     def __init__(self):
-        usuario = os.usuario
-        senha = os.senha
-        servidor = os.servidor
-        banco = os.banco
+        usuario =  os.environ['usuario']
+        senha =  os.environ['senha']
+        servidor =  os.environ['servidor']
+        banco =  os.environ['banco']
         self.conexão = create_engine(f'postgresql://{usuario}:{senha}@{servidor}/{banco}')
     
     def tratarcards():
@@ -121,8 +121,6 @@ class Dashboard():
         return soma.strftime("%Y-%m-%d")
 
 
-
-# token='a464e5e2459dcd838e515af10a6fc17035ca1a5a'
 # url = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={token}'
 # payload = {
 #     "bookings": [
