@@ -8,9 +8,50 @@
     <link rel="shortcut icon" href="{{url_for('static', filename='favicon.png')}}">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <style> 
-        .container{
+    <style>
+        td {
+            cursor: pointer;
+        }
+    </style>
+    <style>
+        .formslots{
+            margin-top: 10px;
+        }
+        .marcada {
+            background-color: #E5E5E5;
+        }
+
+        .table {
+            border-collapse: collapse;
+            padding: 5px 2px;
+            font-size: 0.9em;
+            border-radius: 5px 5px 0 0;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0, 15);
+        }
+
+        .table thead tr {
+            background-color: #00AFAA;
+            color: #ffffff;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .table th,
+        table td {
+            padding: 12px 15px;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #dddddd;
+            color: rgba(0, 0, 0, 0.3);
+        }
+
+        .table tbody tr:hover {
+            background-color: #4F5E69;
+            color: white;
+        }
+
+        .container {
             display: flex;
             flex-direction: row;
             align-items: flex-start;
@@ -19,32 +60,36 @@
             height: 100vh;
             width: 100%;
         }
-        .scroll{    
+
+        .scroll {
             margin: 3px;
             color: white;
-            max-height: 100%;
-            overflow-y: scroll;   
+            height: 100%;
+            overflow-y: scroll;
         }
-        .espaço{
+
+        .espaço {
             margin: 5px;
             padding: 5px;
         }
-        .filtros{
+
+        .filtros {
             background-color: #00AFAA;
             width: 20%;
-            height: 100%;
-            box-shadow:  5px 10px #004745;
-            margin: 5px;
+            height: 102%;
             padding: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
-        .dashboard{
+
+        .dashboard {
             background-color: white;
             width: 80%;
             height: 100%;
             margin: 5px;
             padding: 5px;
         }
-        .dashboard2{
+
+        .dashboard2 {
             display: flex;
             flex-direction: column;
             margin: 0px;
@@ -53,7 +98,8 @@
             width: 100%;
             justify-content: space-around;
         }
-        .dashboardcards{
+
+        .dashboardcards {
             display: flex;
             flex-direction: row;
             margin: 0px;
@@ -61,55 +107,66 @@
             height: 10%;
             width: 100%;
             justify-content: space-around;
-            align-items: flex-start;    
+            align-items: flex-start;
         }
-        .cards{
+
+        .cards {
             background-color: #00AFAA;
             width: 15%;
             height: 100%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
             margin: 5px;
             padding: 5px;
+            border-radius: 5px 5px;
         }
-        .tabelaprioridade{
-            background-color: #00AFAA;
+
+        .tabelaprioridade {
             position: relative;
             width: 90%;
             height: 30%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
             margin: 5px;
             padding: 5px;
             left: 5%;
+            border-bottom: 2px solid #00AFAA;
+            border-top: 2px solid #00AFAA;
+            border-radius: 5px 5px 0 0;
         }
-        .tabelacapacidade{
-            background-color: #00AFAA;
+
+        .tabelacapacidade {
             position: relative;
             width: 90%;
             height: 20%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
             margin: 5px;
             padding: 5px;
             left: 5%;
-        }  
-        .tabelaescala{
-            background-color: #00AFAA;
+            border-bottom: 2px solid #00AFAA;
+            border-top: 2px solid #00AFAA;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .tabelaescala {
             position: relative;
             width: 90%;
             height: 25%;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
             margin: 5px;
             padding: 5px;
             left: 5%;
-        }      
-        p{
-            color: white;
+            border-bottom: 2px solid #00AFAA;
+            border-top: 2px solid #00AFAA;
+            border-radius: 5px 5px 0 0;
         }
+
         h2 {
             color: white;
         }
+
         label {
             color: white;
         }
+
         .botão {
             margin-top: 10px;
             width: 100%;
@@ -120,13 +177,14 @@
             background-color: white;
             border-radius: .5rem;
         }
+
         .botão:hover {
             margin-top: 10px;
             width: 100%;
             height: 50px;
             font-weight: 600;
             background-color: rgb(243, 239, 239);
-            color: #00AFAA ;
+            color: #00AFAA;
             border-color: var(--bd-violet);
             border-radius: .5rem;
         }
@@ -135,16 +193,16 @@
 
 <body>
     <div class="container">
-        <form class="filtros" action="/filtrar">
-            <div class="espaço">  
+        <div class="filtros">
+            <form class="espaço" action="/filtrar">
                 <h2>Workstation Planejamento</h2>
                 <div class="form-group">
                     <label for="data">Data:</label>
-                    <input type="date" class="form-control" id="no-spin" onkeypress="return false" name="date" min="">
+                    <input type="date" class="form-control" id="date" onkeypress="return false" name="date" min="">
                 </div>
                 <div>
                     <label for="região">Região:</label>
-                    <select class="form-control" name="região">
+                    <select class="form-control" name="região" id="região">
                         <option selected>Escolha a região</option>
                         {% for row in regiões %}
                         <option value="{{row}}">{{row}}</option>
@@ -154,7 +212,7 @@
                 </p>
                 <div>
                     <label for="bu">Produto:</label>
-                    <select class="form-control" name="bu">
+                    <select class="form-control" name="bu" id="bu">
                         <option selected>Escolha o produto</option>
                         {% for row in bus %}
                         <option value="{{row}}">{{row}}</option>
@@ -163,14 +221,23 @@
                 </div>
                 </p>
                 <button type="submit" class="botão">FILTRAR</button>
-            </div>    
-        </form>
+            </form>
+            <form class="espaço" action="/abrirslots">
+                <label>Data:</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" name="col" id="col">
+                <label>Área:</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" name="lin" id="lin">
+                <label>Agenda:</label>
+                <input type="text" class="form-control mb-2 mr-sm-2" name="cel" id="cel">
+                <button type="submit" class="botão">ABRIR SLOTS</button>
+            </form>
+        </div>
 
         <div class="dashboard">
-            <div class="dashboard2"> 
+            <form class="dashboard2">
                 <div class="dashboardcards">
                     <div class="cards">
-                    Valor 1
+                        Valor 1
                     </div>
                     <div class="cards">
                         Valor 2
@@ -182,48 +249,163 @@
                         Valor 4
                     </div>
                 </div>
-                <div class="tabelaprioridade">
-                    código aqui
+                <div class="tabelaprioridade" id="marcadorcelula">
+                    <div class="scroll">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    {% for prioridadeheader in prioridadeheading %}
+                                    {% if loop.index-1 == 3 %}
+                                    <th id="A">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 4 %}
+                                    <th id="B">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 5 %}
+                                    <th id="C">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 6 %}
+                                    <th id="D">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 7 %}
+                                    <th id="E">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 8 %}
+                                    <th id="F">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 9 %}
+                                    <th id="G">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 10 %}
+                                    <th id="H">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 11 %}
+                                    <th id="I">{{prioridadeheader}}</th>
+                                    {% elif loop.index-1 == 12 %}
+                                    <th id="J">{{prioridadeheader}}</th>
+                                    {% else %}
+                                    <th>{{prioridadeheader}}</th>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quantidade in prioridaderegião %}
+                                <tr>
+                                    <td>{{prioridaderegião[loop.index-1]}}</td>
+                                    <td>{{prioridadehub[loop.index-1]}}</td>
+                                    <td id="{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadeárea[loop.index-1]}}</td>
+                                    <td id="A{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate1[loop.index-1]}}</td>
+                                    <td id="B{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate2[loop.index-1]}}</td>
+                                    <td id="C{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate3[loop.index-1]}}</td>
+                                    <td id="D{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate4[loop.index-1]}}</td>
+                                    <td id="E{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate5[loop.index-1]}}</td>
+                                    <td id="F{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate6[loop.index-1]}}</td>
+                                    <td id="G{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate7[loop.index-1]}}</td>
+                                    <td id="H{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate8[loop.index-1]}}</td>
+                                    <td id="I{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate9[loop.index-1]}}</td>
+                                    <td id="J{{loop.index-1}}" onclick="selecionaCelula(this.id)">
+                                        {{prioridadedate10[loop.index-1]}}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="tabelacapacidade">
                     código aqui
                 </div>
-                <div class="tabelaescala">
+                <div class="tabelaescala" id="tabelaescala">
                     <div class="scroll">
-                        <table class="table">
-                            <tr>
-                                {% for escalaheader in escalaheading %}
-                                <th>{{escalaheader}}</th>
+                        <table class="table" id="marcadorlinha">
+                            <thead>
+                                <tr>
+                                    {% for escalaheader in escalaheading %}
+                                    <th>{{escalaheader}}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quantidade in escalaregião %}
+                                <tr>
+                                    <td>{{escalaregião[loop.index-1]}}</td>
+                                    <td>{{escalahub[loop.index-1]}}</td>
+                                    <td>{{escalaescala[loop.index-1]}}</td>
+                                    <td>{{escaladata[loop.index-1]}}</td>
+                                    <td>{{escalaid_colaborador[loop.index-1]}}</td>
+                                    <td>{{escalacolaborador[loop.index-1]}}</td>
+                                    <td>{{escalaid_cargo[loop.index-1]}}</td>
+                                    <td>{{escaladatainicio[loop.index-1]}}</td>
+                                    <td>{{escaladatafim[loop.index-1]}}</td>
+                                    <td>{{escalaausente[loop.index-1]}}</td>
+                                    <td>{{escalabu[loop.index-1]}}</td>
+                                </tr>
                                 {% endfor %}
-                            </tr>
-
-                            {% for quantidade in escalaregião %}
-                            <tr>
-                                <td>{{escalaregião[loop.index-1]}}</td>  
-                                <td>{{escalahub[loop.index-1]}}</td> 
-                                <td>{{escalaescala[loop.index-1]}}</td> 
-                                <td>{{escaladata[loop.index-1]}}</td> 
-                                <td>{{escalaid_colaborador[loop.index-1]}}</td> 
-                                <td>{{escalacolaborador[loop.index-1]}}</td> 
-                                <td>{{escalaid_cargo[loop.index-1]}}</td> 
-                                <td>{{escaladatainicio[loop.index-1]}}</td> 
-                                <td>{{escaladatafim[loop.index-1]}}</td> 
-                                <td>{{escalaausente[loop.index-1]}}</td> 
-                                <td>{{escalabu[loop.index-1]}}</td> 
-                            </tr>
-                            {% endfor %}
+                            </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
 
-        <script>   
+        <script>
             // script para colocar o filtro p/ selecionar apenas as datas a partir de hoje
             var today = new Date();
-            today.setDate(today.getDate() + 1); 
+            today.setDate(today.getDate() + 1);
             today = today.toISOString().split('T')[0];
             document.getElementsByName("date")[0].setAttribute('min', today);
+
+            // script para marcar uma linha na tabela
+            $('#marcadorlinha').on('click', 'tr', function () {
+                $(this).siblings().removeClass('marcada');
+                $(this).toggleClass('marcada');
+                var celula = $(this).text();
+                celula = '[1'+celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                    ", ",");
+                celula = celula.replace("                                ", "]");
+                console.log(celula)
+                $('#cel').val(celula);
+            });
+
+            // script para marcar uma celula na tabela   
+            var td = $('td');
+            $('#marcadorcelula').on('click', 'td', function () {
+                td.not(this).removeClass('marcada');
+                $(this).toggleClass('marcada');
+            });
+
+            // função para pegar os dados de uma celula
+            function selecionaCelula(id) {
+                var linha = $('#' + id.substring(1, id.length)).text();
+                var coluna = $('#' + id.substring(1, 0)).text();
+                linha = linha.replace("                                        ", "");
+                $('#lin').val(linha);
+                $('#col').val(coluna);
+            };
+
+            // function filtrar(){
+
+            //     let filtrardata = document.getElementById('date').value;
+            //     console.log(filtrardata);
+            //     let filtrarregião = document.getElementById('região').value;
+            //     console.log(filtrarregião);
+            //     let filtrarbu = document.getElementById('bu').value;
+            //     console.log(filtrarbu);
+            // };
+
+            
+
         </script>
 </body>
 
