@@ -15,6 +15,7 @@
     </style>
     <style>
         .popup-wrapper {
+            display: none;
             background: rgba(0, 0, 0, .5);
             position: fixed;
             top: 0;
@@ -26,18 +27,53 @@
         .popup{
             font-family: arial;
             text-align: center;
-            width: 100%;
+            width: 25%;
+            height: 20%;
             margin: 10% auto;
             padding: 20px;
-            background: white;
             position: relative;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
-        .popup button{
+        .popup .popupcolors{
+            text-align: center;
+            position: relative;
+            color: #4F5E69;
+        }
+        .popup .confirmar{
+            margin-top: 10px;
+            width: 40%;
+            height: 50px;
+            font-weight: 600;
+            color: var(--bs-white);
+            border-color: var(--bd-violet);
+            border-radius: .5rem;
+
+            color: #ffffff;
+            cursor: pointer;
+            padding: 6px 10px;
+            text-decoration: none;
+            background: #00AFAA;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        .popup .cancelar{
+            margin-top: 10px;
+            width: 40%;
+            height: 50px;
+            font-weight: 600;
+            color: var(--bs-white);
+            border-color: var(--bd-violet);
+            border-radius: .5rem;
+
             color: white;
             cursor: pointer;
             padding: 6px 10px;
             text-decoration: none;
-            background: crimson;
+            background: #4F5E69;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
         .formslots{
             margin-top: 10px;
@@ -217,16 +253,6 @@
 </head>
 
 <body>
-    <div class="popup-wrapper">
-        <div class="popup">
-            <div class="popup-content">
-                <h2>Confirmação</h2>
-                <p>Você tem certeza que desaja abrir slots?</p>
-                <button type="submit">Sim</button>    
-                <button type="submit">Não</button>  
-            </div>
-        </div>
-    </div>
     <div class="container">
         <div class="filtros">
             <form class="espaço" action="/filtrar">
@@ -418,6 +444,8 @@
             $('#marcadorcelula').on('click', 'td', function () {
                 td.not(this).removeClass('marcada');
                 $(this).toggleClass('marcada');
+                const popup = document.querySelector('.popup-wrapper');
+                popup.style.display = 'block';
             });
 
             // função para pegar os dados de uma celula

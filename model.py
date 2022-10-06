@@ -31,7 +31,7 @@ class Dashboard():
         servidor =  os.environ['servidor']
         banco =  os.environ['banco']
         self.conexão = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""")
-    
+
     def tratarcards():
         print("Tratando os cards")
     
