@@ -118,7 +118,7 @@ def abrirslots():
             dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
 
     print('Todos os slots abertos com sucesso!')
-    return redirect("http://127.0.0.1:5000/", code=302)
+    return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
 
 
