@@ -5,6 +5,7 @@ import datetime
 import requests
 import os
 import json
+import sqlalchemy
 class Slots():
     def abrirslots(self, data, regime, bu, idparceiro, slot_hora, urltoken):    
         payload = {
@@ -42,8 +43,9 @@ class Dashboard():
         sp_senha =  os.environ['sp_senha']
         sp_servidor =  os.environ['sp_servidor']
         sp_banco =  os.environ['sp_banco']
-        self.conexão = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""")
-        self.serverproduction = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""")
+        self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+
 
     def tratarfiltrarprioridade(self, data, região, bu):
         consulta = f"""
@@ -155,15 +157,6 @@ class Dashboard():
         idparceiro = int(idparceiro.iloc[0]['id_parceiro'])
         idparceiro = json.dumps(idparceiro)
         return idparceiro
-
-    def duraçãoslot(self, hub, bu):
-        if (hub == 'Brasília' and bu == 'vaccines') or (hub == 'São Cristóvão' and bu == 'vaccines') or (hub == 'Barra' and bu == 'vaccines') or (hub == 'Cabo Frio' and bu == 'vaccines') or (hub == 'Alphaville' and bu == 'vaccines') or (hub == 'Vila Olímpia' and bu == 'vaccines') or (hub == 'São Bernardo do Campo' and bu == 'vaccines') or (hub == 'Tatuapé' and bu == 'vaccines')  or (hub == 'Curitiba' and bu == 'vaccines') or (hub == 'Campinas' and bu == 'vaccines') or (hub == 'Recife' and bu == 'vaccines'):
-            duração = 40
-        elif  (hub == 'São Cristóvão' and bu == 'laboratories') or (hub == 'Barra' and bu == 'laboratories') or (hub == 'Alphaville' and bu == 'laboratories') or (hub == 'Vila Olímpia' and bu == 'laboratories') or (hub == 'São Bernardo do Campo' and bu == 'laboratories') or (hub == 'Tatuapé' and bu == 'laboratories'):
-            duração = 30
-        elif (hub == 'Vitória' and bu == 'vaccines') or (hub == 'Brasília' and bu == 'laboratories') or (hub == 'Vitória' and bu == 'laboratories') or (hub == 'Curitiba' and bu == 'laboratories') or (hub == 'Recife' and bu == 'laboratories') or (hub == 'Campinas' and bu == 'laboratories'):
-            duração = 60
-        return duração    
 
     def regime(self, escala):
         if (escala == 'VAC Técnica P1') or (escala == 'VAC Técnica P2') or (escala == 'LAB Técnica P1') or (escala == 'LAB Técnica P2'):

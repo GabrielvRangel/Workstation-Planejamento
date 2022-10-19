@@ -80,7 +80,6 @@ def filtrar():
 def abrirslots():   
     data = request.args.get('col')
     área = request.args.get('lin')
-    status = request.args.get('status')
     id_técnica = request.args.get('id_técnica')
     técnica = request.args.get('técnica')
     produto = request.args.get('produto')
@@ -88,7 +87,7 @@ def abrirslots():
     inicioregime = request.args.get('inicioregime')
     fimregime = request.args.get('fimregime')
     hub = request.args.get('hub')
-    duração = dash.duraçãoslot(hub, produto)
+    duração = int(request.args.get('duração'))
     regime = dash.regime(regime)
     idparceiro = dash.idparceiro(área)
     slotatual = datetime.strptime(inicioregime, "%H:%M:%S")

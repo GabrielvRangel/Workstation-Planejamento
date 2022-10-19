@@ -28,6 +28,8 @@
             display: flex;
             flex-direction: row;
             width: 100%;
+            height: 20%;
+            justify-content: space-between;
         }
         .popup-wrapper {
             display: none;
@@ -45,8 +47,8 @@
         .popup{
             font-family: arial;
             text-align: center;
-            width: 25%;
-            height: 30%;
+            width: 30%;
+            height: 40%;
             margin: 10% auto;
             padding: 20px;
             position: relative;
@@ -54,17 +56,40 @@
             border-radius: 10px;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
         }
+        .popup-content{
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            position: relative;
+            bottom: 15px;
+            width: 100%;
+            height: 100%;
+        }
+        .popup .popupselect{
+            position: relative;
+            text-align: left;
+            display:flex;
+            flex-direction: row;
+            width: 100%;
+            height: 10%;
+        }
         .popup .popupcolors{
             text-align: center;
             position: relative;
             color: #4F5E69;
+            width: 100%;
+            height: 20%;
         }
-        .popup form{
-            width: 50%;
+        .popup .selectcolors{
+            text-align: left;
+            position: relative;
+            color: #4F5E69;
+            width: 100%;
+            height: 20%;
         }
         .popup .confirmar{
             margin-top: 10px;
-            width: 80%;
+            width: 40%;
             height: 50px;
             font-weight: 600;
             border-color: var(--bd-violet);
@@ -75,13 +100,10 @@
             background: #00AFAA;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            position: relative;
-            right: 28px;
-            top: 20px;
         }
         .popup .cancelar{
             margin-top: 10px;
-            width: 45%;
+            width: 40%;
             height: 50px;
             font-weight: 600;
             border-color: var(--bd-violet);
@@ -92,9 +114,6 @@
             background: #4F5E69;
             border-radius: 5px;
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            position: relative;
-            left: 18px;
-            top: 20px;
         }
         .formslots{
             margin-top: 10px;
@@ -265,6 +284,11 @@
             border-color: var(--bd-violet);
             border-radius: .5rem;
         }
+
+        #abrirslots{
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 
@@ -274,11 +298,20 @@
             <div class="carregamento">
                 <h3 id="textocarregamento"></h3>
             </div>
-            <div class="popup-content">
-                <h1 class="popupcolors">Tem certeza?</h1>
-                <p class="popupcolors" id="popuptexto"></p>
-                <div class="organizarbuttons">
-                    <form id="abrirslots" action="/abrirslots">
+            <form id="abrirslots" action="/abrirslots">
+                <div class="popup-content">
+                    <h1 class="popupcolors">Tem certeza?</h1>
+                    <p class="popupcolors" id="popuptexto"></p>
+                    <div class="popupselect">
+                        <p class="selectcolors">Antes de confirmar, escolha qual é o tempo dos slots dentro dessa agenda:</p>
+                        <select style="border: 2px solid #00AFAA;" name="duração" id="duração">
+                            <option value="30">30</option>
+                            <option value="40">40</option>
+                            <option value="50">50</option>
+                            <option value="60">60</option>
+                        </select>
+                    </div>
+                    <div>
                         <input type="hidden" name="col" id="col">
                         <input type="hidden" name="lin" id="lin">
                         <input type="hidden" name="produto" id="produto">
@@ -288,11 +321,13 @@
                         <input type="hidden" name="hub" id="hub">
                         <input type="hidden" name="id_técnica" id="id_técnica">
                         <input type="hidden" name="técnica" id="técnica">
+                    </div>
+                    <div class="organizarbuttons">
                         <button type="submit" class="confirmar">Confirmar</button>    
-                    </form>
-                    <button type="submit" class="cancelar">Cancelar</button>  
+                        <button type="submit" class="cancelar">Cancelar</button>  
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
     <div class="container">
@@ -546,15 +581,21 @@
             //botão cancelar do popup
             const cancelarbutton = document.querySelector('.cancelar')
             cancelarbutton.addEventListener('click', () => {
+                document.getElementById('abrirslots').onsubmit = function() {
+                    return false;
+                }
                 const popup = document.querySelector('.popup-wrapper');
                 popup.style.display = 'none';
             })
 
             //botão confirmar do popup
-            document.getElementById('abrirslots').onsubmit = function() {
+            const confirmarbutton = document.querySelector('.confirmar')
+            confirmarbutton.addEventListener('click', () => {
                 if(escalavalores[11] == 'Ocupado'){
                     $('#popuptexto').empty().append("ALERTA! A Técnica selecionada está com status ocupado, você não pode abrir slot para técnica que já está sendo utilizada.");
+                    document.getElementById('abrirslots').onsubmit = function() {
                     return false;
+                    }
                 }
                 else{
                     const popup = document.querySelector('.popup-content');
@@ -562,8 +603,11 @@
                     $('#textocarregamento').empty().append("Abrindo slots, aguarde...");
                     const carregamento = document.querySelector('.carregamento');
                     carregamento.style.display = 'block';
+                    document.getElementById('abrirslots').onsubmit = function() {
+                    return true;
+                    }            
                 }
-            }
+            });
 
             //botão filtrar popup
             const filtrarbutton = document.querySelector('.botão')
