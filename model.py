@@ -46,7 +46,7 @@ class Dashboard():
         sp_banco =  os.environ['sp_banco']
         self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
         self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-       
+   
 
     def tratarfiltrarprioridade(self, data, região, bu):
         if bu == 'vaccines': bu = 'Imunizações' 
@@ -58,7 +58,7 @@ class Dashboard():
         on dp."HUB" = lmsa."HUB"
         where "Turno da Agenda" = 'Manhã'
         and "BU da Agenda" = '{bu}'
-        and "Data da Agenda" >= '{data}' and "Data da Agenda" <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
+        and "Data da Agenda" >= '{data}' and "Data da Agenda" <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
         and macro_região = '{região}'
         group by macro_região, lmsa."HUB", "Área", "Data da Agenda"
         order by "Data da Agenda", lmsa."HUB", "Área"
@@ -66,7 +66,7 @@ class Dashboard():
         self.prioridadetratada = pd.read_sql_query(consulta, con=self.conexão)
         self.prioridadetratada = pd.pivot_table(self.prioridadetratada, index=["região", "hub", "área"], columns=["data"], values=["score"])
         self.prioridadetratada = self.prioridadetratada.set_axis(self.prioridadetratada.columns.tolist(), axis=1).reset_index()
-        self.prioridadetratada.columns = ['região', 'hub', 'área', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4))] 
+        self.prioridadetratada.columns = ['região', 'hub', 'área', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4)), str(self.somardata(data, 5)), str(self.somardata(data, 6)), str(self.somardata(data, 7)), str(self.somardata(data, 8)), str(self.somardata(data, 9))]
         return self.prioridadetratada
 
     def tratarfiltrarcapacidade(self, data, região, bu):
@@ -86,7 +86,7 @@ class Dashboard():
         and macro_região = '{região}'
         and previsto = 'Trabalho'
         and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
-        and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
+        and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
         and jeeo.escala LIKE '{bu}'
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador ) a 
@@ -95,7 +95,7 @@ class Dashboard():
         self.capacidadetratada = pd.read_sql_query(consulta, con=self.conexão)
         self.capacidadetratada = pd.pivot_table(self.capacidadetratada, index=["status"], columns=["data"], values=["quant"])
         self.capacidadetratada = self.capacidadetratada.set_axis(self.capacidadetratada.columns.tolist(), axis=1).reset_index()
-        self.capacidadetratada.columns = ['status', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4))] 
+        self.capacidadetratada.columns = ['status', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4)), str(self.somardata(data, 5)), str(self.somardata(data, 6)), str(self.somardata(data, 7)), str(self.somardata(data, 8)), str(self.somardata(data, 9))] 
         return self.capacidadetratada
 
     def tratarfiltrarescala(self, data, região, bu):
@@ -115,7 +115,7 @@ class Dashboard():
         and previsto = 'Trabalho'
         and jeeo.escala LIKE '{bu}'
         and macro_região = '{região}'
-        and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
+        and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
         and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
         and jeeo.data > current_date
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
