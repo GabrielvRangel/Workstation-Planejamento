@@ -32,19 +32,18 @@ def filtrar():
     date = request.args.get('date')
     região = request.args.get('região')
     bu = request.args.get('bu')
-    dash.tratarescala()
     #ação depois de filtrar
     if not date or região == "Escolha a região" or bu == "Escolha o produto":
         return render_template("index.html", regiões= regiões, bus= bus)
     else:
-        capacidade = dash.tratarfiltrarcapacidade(date, região, bu)
-        capacidadeheading = list(capacidade)
-        capacidadestatus = list(capacidade['status'])
-        capacidadedate1 = list(capacidade[str(dash.somardata(date, 0))])
-        capacidadedate2 = list(capacidade[str(dash.somardata(date, 1))])
-        capacidadedate3 = list(capacidade[str(dash.somardata(date, 2))])
-        capacidadedate4 = list(capacidade[str(dash.somardata(date, 3))])
-        capacidadedate5 = list(capacidade[str(dash.somardata(date, 4))])
+        # capacidade = dash.tratarfiltrarcapacidade(date, região, bu)
+        # capacidadeheading = list(capacidade)
+        # capacidadestatus = list(capacidade['status'])
+        # capacidadedate1 = list(capacidade[str(dash.somardata(date, 0))])
+        # capacidadedate2 = list(capacidade[str(dash.somardata(date, 1))])
+        # capacidadedate3 = list(capacidade[str(dash.somardata(date, 2))])
+        # capacidadedate4 = list(capacidade[str(dash.somardata(date, 3))])
+        # capacidadedate5 = list(capacidade[str(dash.somardata(date, 4))])
         prioridade = dash.tratarfiltrarprioridade(date, região, bu)
         prioridadeheading = list(prioridade)
         prioridaderegião = list(prioridade['região'])
@@ -55,7 +54,7 @@ def filtrar():
         prioridadedate3 = list(prioridade[str(dash.somardata(date, 2))])
         prioridadedate4 = list(prioridade[str(dash.somardata(date, 3))])
         prioridadedate5 = list(prioridade[str(dash.somardata(date, 4))])
-        escala = dash.filtrarescala(date, região, bu)
+        escala = dash.tratarfiltrarescala(date, região, bu)
         escalaregião = list(escala['região']) 
         escalahub = list(escala['hub'])
         escalaescala = list(escala['escala'])
@@ -70,9 +69,10 @@ def filtrar():
         return  render_template("index.html", prioridadeheading=prioridadeheading, prioridaderegião=prioridaderegião, prioridadeárea=prioridadeárea, prioridadehub=prioridadehub, 
         prioridadedate1=prioridadedate1, prioridadedate2=prioridadedate2, prioridadedate3=prioridadedate3, prioridadedate4=prioridadedate4, prioridadedate5=prioridadedate5,
         escalaregião=escalaregião, escalahub=escalahub, escalaescala=escalaescala, escaladata=escaladata, escalaid_técnica=escalaid_técnica, 
-        escalatécnica=escalatécnica, escalahrentrada=escalahrentrada, escalahrsaída=escalahrsaída, escalaárea=escalaárea, escalabu=escalabu, escalastatus=escalastatus, 
-        regiões = regiões, bus = bus, capacidadeheading=capacidadeheading, capacidadestatus=capacidadestatus, capacidadedate1=capacidadedate1, capacidadedate2=capacidadedate2, 
-        capacidadedate3=capacidadedate3, capacidadedate4=capacidadedate4, capacidadedate5=capacidadedate5)
+        escalatécnica=escalatécnica, escalahrentrada=escalahrentrada, escalahrsaída=escalahrsaída, escalaárea=escalaárea, escalabu=escalabu, escalastatus=escalastatus, regiões = regiões, bus = bus 
+        #capacidadeheading=capacidadeheading, capacidadestatus=capacidadestatus, capacidadedate1=capacidadedate1, capacidadedate2=capacidadedate2, 
+        # capacidadedate3=capacidadedate3, capacidadedate4=capacidadedate4, capacidadedate5=capacidadedate5
+        )
 
 @app.route("/abrirslots")
 def abrirslots():   
