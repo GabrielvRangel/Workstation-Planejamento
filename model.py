@@ -36,35 +36,32 @@ class Slots():
        
 class Dashboard():    
     def __init__(self):
-        # usuario =  os.environ['usuario']
-        # senha =  os.environ['senha']
-        # servidor =  os.environ['servidor']
-        # banco =  os.environ['banco']
-        # sp_usuario =  os.environ['sp_usuario']
-        # sp_senha =  os.environ['sp_senha']
-        # sp_servidor =  os.environ['sp_servidor']
-        # sp_banco =  os.environ['sp_banco']
-        # self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        # self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-        self.conexão = create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""")
-        self.serverproduction = create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""")
-
+        usuario =  os.environ['usuario']
+        senha =  os.environ['senha']
+        servidor =  os.environ['servidor']
+        banco =  os.environ['banco']
+        sp_usuario =  os.environ['sp_usuario']
+        sp_senha =  os.environ['sp_senha']
+        sp_servidor =  os.environ['sp_servidor']
+        sp_banco =  os.environ['sp_banco']
+        self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+       
 
     def tratarfiltrarprioridade(self, data, região, bu):
+        if bu == 'vaccines': bu = 'Imunizações' 
+        else: bu = 'Lab'
         consulta = f"""
-        select macro_região as região, a.hub, a.área, max(a.score) as score, a.data from ( 
-        select "HUB" as hub, 
-        case when "BU da Agenda" = 'Imunizações' then 'vaccines' else 'laboratories' end as bu, 
-        SUBSTRING("Score"::text from 1 for 5)::numeric as score, "Área" as área, "Taxa de Ocupação Simulada" as ocupação, "Data da Agenda" as data 
-        from last_mile.sugestoes_alocacao
-        where "Turno da Agenda" = 'Manhã') a
-        left join dim_parceiros
-        on "HUB" = a.hub
-        where data >= '{data}' and data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
+        select macro_região as região, lmsa."HUB" as hub,"Área" as área, max(SUBSTRING("Score"::text from 1 for 5)::numeric) as score, "Data da Agenda" as data
+        from last_mile.sugestoes_alocacao lmsa
+        left join dim_parceiros dp
+        on dp."HUB" = lmsa."HUB"
+        where "Turno da Agenda" = 'Manhã'
+        and "BU da Agenda" = '{bu}'
+        and "Data da Agenda" >= '{data}' and "Data da Agenda" <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
         and macro_região = '{região}'
-        and a.bu = '{bu}'
-        group by macro_região, a.hub, a.bu, a.área, a.data
-        order by a.data, a.hub, a.área
+        group by macro_região, lmsa."HUB", "Área", "Data da Agenda"
+        order by "Data da Agenda", lmsa."HUB", "Área"
         """
         self.prioridadetratada = pd.read_sql_query(consulta, con=self.conexão)
         self.prioridadetratada = pd.pivot_table(self.prioridadetratada, index=["região", "hub", "área"], columns=["data"], values=["score"])
@@ -73,10 +70,11 @@ class Dashboard():
         return self.prioridadetratada
 
     def tratarfiltrarcapacidade(self, data, região, bu):
+        if bu == 'vaccines': bu = '%VAC%' 
+        else: bu = '%LAB%'
         consulta = f"""    
         select a.status, count(a.status) as quant, a.data from (
-        select macro_região as região, jeeo.hub, jeeo.escala, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica, jeeo.data_inicio_previsto::time as hr_entrada, jeeo.data_fim_previsto::time as hr_saída, 
-        wsa."area" as área,
+        select macro_região as região, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica,
         (case when jeeo.escala LIKE '%VAC%' then 'vaccines' when jeeo.escala LIKE '%LAB%' then 'laboratories' else 'híbrida' end) as bu,
         (case when wsa.tecnica is not null then 'Ocupado' else 'Disponível' end) as status
         from jornadas_escala.escala_operacional jeeo
@@ -88,11 +86,10 @@ class Dashboard():
         and macro_região = '{região}'
         and previsto = 'Trabalho'
         and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
-        and jeeo.data > current_date
+        and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
+        and jeeo.escala LIKE '{bu}'
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador ) a 
-        where a.bu = '{bu}'
-        and a.data >= '{data}' and a.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
         group by a.status, a.data
         """
         self.capacidadetratada = pd.read_sql_query(consulta, con=self.conexão)
@@ -102,6 +99,8 @@ class Dashboard():
         return self.capacidadetratada
 
     def tratarfiltrarescala(self, data, região, bu):
+        if bu == 'vaccines': bu = '%VAC%' 
+        else: bu = '%LAB%'
         consulta = f"""
         select macro_região as região, jeeo.hub, jeeo.escala, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica, jeeo.data_inicio_previsto::time as hr_entrada, jeeo.data_fim_previsto::time as hr_saída, 
         wsa."area" as área,
@@ -114,15 +113,16 @@ class Dashboard():
         on "HUB" = jeeo.hub
         where escala LIKE '%Técnica%'
         and previsto = 'Trabalho'
+        and jeeo.escala LIKE '{bu}'
+        and macro_região = '{região}'
+        and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
         and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
         and jeeo.data > current_date
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador
         """
         self.escalatratada = pd.read_sql_query(consulta, con=self.conexão)
-        self.escalatratada['data'] = pd.to_datetime(self.escalatratada['data'])
-        filtrarescala = self.escalatratada[(self.escalatratada['data'] >= f'{data}') & (self.escalatratada['data'] <= f'{str(self.somardata(data, 4))}') & (self.escalatratada['região'] == f'{região}') & (self.escalatratada['bu'] == f'{bu}')] 
-        return filtrarescala
+        return self.escalatratada
             
     def opçãodefiltroregião(self):
         consulta = f"select macro_região from dim_parceiros where macro_região is not null group by macro_região"
