@@ -36,19 +36,17 @@ class Slots():
        
 class Dashboard():    
     def __init__(self):
-        # usuario =  os.environ['usuario']
-        # senha =  os.environ['senha']
-        # servidor =  os.environ['servidor']
-        # banco =  os.environ['banco']
-        # sp_usuario =  os.environ['sp_usuario']
-        # sp_senha =  os.environ['sp_senha']
-        # sp_servidor =  os.environ['sp_servidor']
-        # sp_banco =  os.environ['sp_banco']
-        # self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        # self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-        self.conexão = create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""")
-        self.serverproduction = create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""")
-
+        usuario =  os.environ['usuario']
+        senha =  os.environ['senha']
+        servidor =  os.environ['servidor']
+        banco =  os.environ['banco']
+        sp_usuario =  os.environ['sp_usuario']
+        sp_senha =  os.environ['sp_senha']
+        sp_servidor =  os.environ['sp_servidor']
+        sp_banco =  os.environ['sp_banco']
+        self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+  
 
     def tratarfiltrarprioridade(self, data, região, bu):
         consulta = f"""
