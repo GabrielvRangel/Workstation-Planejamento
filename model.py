@@ -36,17 +36,19 @@ class Slots():
        
 class Dashboard():    
     def __init__(self):
-        usuario =  os.environ['usuario']
-        senha =  os.environ['senha']
-        servidor =  os.environ['servidor']
-        banco =  os.environ['banco']
-        sp_usuario =  os.environ['sp_usuario']
-        sp_senha =  os.environ['sp_senha']
-        sp_servidor =  os.environ['sp_servidor']
-        sp_banco =  os.environ['sp_banco']
-        self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-  
+        # usuario =  os.environ['usuario']
+        # senha =  os.environ['senha']
+        # servidor =  os.environ['servidor']
+        # banco =  os.environ['banco']
+        # sp_usuario =  os.environ['sp_usuario']
+        # sp_senha =  os.environ['sp_senha']
+        # sp_servidor =  os.environ['sp_servidor']
+        # sp_banco =  os.environ['sp_banco']
+        # self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        # self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+        self.conexão = create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""")
+        self.serverproduction = create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""")
+
 
     def tratarfiltrarprioridade(self, data, região, bu):
         consulta = f"""
@@ -99,7 +101,7 @@ class Dashboard():
         self.capacidadetratada.columns = ['status', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4))] 
         return self.capacidadetratada
 
-    def tratarescala(self):
+    def tratarfiltrarescala(self, data, região, bu):
         consulta = f"""
         select macro_região as região, jeeo.hub, jeeo.escala, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica, jeeo.data_inicio_previsto::time as hr_entrada, jeeo.data_fim_previsto::time as hr_saída, 
         wsa."area" as área,
@@ -118,13 +120,10 @@ class Dashboard():
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador
         """
         self.escalatratada = pd.read_sql_query(consulta, con=self.conexão)
-        return self.escalatratada
-
-    def filtrarescala(self, data, região, bu): 
         self.escalatratada['data'] = pd.to_datetime(self.escalatratada['data'])
         filtrarescala = self.escalatratada[(self.escalatratada['data'] >= f'{data}') & (self.escalatratada['data'] <= f'{str(self.somardata(data, 4))}') & (self.escalatratada['região'] == f'{região}') & (self.escalatratada['bu'] == f'{bu}')] 
         return filtrarescala
-    
+            
     def opçãodefiltroregião(self):
         consulta = f"select macro_região from dim_parceiros where macro_região is not null group by macro_região"
         opçãoregião = pd.read_sql_query(consulta, con=self.conexão)
