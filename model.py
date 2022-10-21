@@ -32,6 +32,7 @@ class Slots():
     def iddoslot(self):
         return self.slotid
 
+    
        
 class Dashboard():    
     def __init__(self):
@@ -182,5 +183,3 @@ class Dashboard():
         self.url = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={self.tkn}'
         return self.url
 
-# dash = Dashboard()
-# dash.tratarcapacidade('2022-10-10', 'Rio de Janeiro', 'vaccines')

@@ -11,6 +11,18 @@ agenda = model.Slots()
 regiões = dash.opçãodefiltroregião()
 bus = dash.opçãodefiltrobu()
 
+#chama todos os hubs/bu por uma função
+
+#função que vai fazer o loop
+#loop para verificar dias entre 30 a 60
+#comparar se todas as áreas ouros do dia atual está aberto de acordo com a prévia
+#verificar se temos técnicas disponíveis
+#abrir o máximo de técnicas que puder nessas áreas ouro LOOP
+#pegar uma técnica disponível
+#pegar uma área que precisa
+#alimentar os dados na tabela
+
+
 @app.route("/")
 def index():    
     return render_template("index.html", regiões = regiões, bus = bus)
