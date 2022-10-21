@@ -44,6 +44,11 @@ def filtrar():
         capacidadedate3 = list(capacidade[str(dash.somardata(date, 2))])
         capacidadedate4 = list(capacidade[str(dash.somardata(date, 3))])
         capacidadedate5 = list(capacidade[str(dash.somardata(date, 4))])
+        capacidadedate6 = list(capacidade[str(dash.somardata(date, 5))])
+        capacidadedate7 = list(capacidade[str(dash.somardata(date, 6))])
+        capacidadedate8 = list(capacidade[str(dash.somardata(date, 7))])
+        capacidadedate9 = list(capacidade[str(dash.somardata(date, 8))])
+        capacidadedate10 = list(capacidade[str(dash.somardata(date, 9))])
         prioridade = dash.tratarfiltrarprioridade(date, região, bu)
         prioridadeheading = list(prioridade)
         prioridaderegião = list(prioridade['região'])
@@ -54,6 +59,11 @@ def filtrar():
         prioridadedate3 = list(prioridade[str(dash.somardata(date, 2))])
         prioridadedate4 = list(prioridade[str(dash.somardata(date, 3))])
         prioridadedate5 = list(prioridade[str(dash.somardata(date, 4))])
+        prioridadedate6 = list(prioridade[str(dash.somardata(date, 5))])
+        prioridadedate7 = list(prioridade[str(dash.somardata(date, 6))])
+        prioridadedate8 = list(prioridade[str(dash.somardata(date, 7))])
+        prioridadedate9 = list(prioridade[str(dash.somardata(date, 8))])
+        prioridadedate10 = list(prioridade[str(dash.somardata(date, 9))])
         escala = dash.tratarfiltrarescala(date, região, bu)
         escalaregião = list(escala['região']) 
         escalahub = list(escala['hub'])
@@ -68,11 +78,12 @@ def filtrar():
         escalastatus = list(escala['status'])
         return  render_template("index.html", prioridadeheading=prioridadeheading, prioridaderegião=prioridaderegião, prioridadeárea=prioridadeárea, prioridadehub=prioridadehub, 
         prioridadedate1=prioridadedate1, prioridadedate2=prioridadedate2, prioridadedate3=prioridadedate3, prioridadedate4=prioridadedate4, prioridadedate5=prioridadedate5,
+        prioridadedate6=prioridadedate6, prioridadedate7=prioridadedate7, prioridadedate8=prioridadedate8, prioridadedate9=prioridadedate9, prioridadedate10=prioridadedate10,
         escalaregião=escalaregião, escalahub=escalahub, escalaescala=escalaescala, escaladata=escaladata, escalaid_técnica=escalaid_técnica, 
         escalatécnica=escalatécnica, escalahrentrada=escalahrentrada, escalahrsaída=escalahrsaída, escalaárea=escalaárea, escalabu=escalabu, escalastatus=escalastatus, 
         regiões = regiões, bus = bus, capacidadeheading=capacidadeheading, capacidadestatus=capacidadestatus, capacidadedate1=capacidadedate1, capacidadedate2=capacidadedate2, 
-        capacidadedate3=capacidadedate3, capacidadedate4=capacidadedate4, capacidadedate5=capacidadedate5
-        )
+        capacidadedate3=capacidadedate3, capacidadedate4=capacidadedate4, capacidadedate5=capacidadedate5, capacidadedate6=capacidadedate6, capacidadedate7=capacidadedate7, 
+        capacidadedate8=capacidadedate8, capacidadedate9=capacidadedate9, capacidadedate10=capacidadedate10)
 
 @app.route("/abrirslots")
 def abrirslots():   
