@@ -46,7 +46,7 @@ class Dashboard():
         sp_banco =  os.environ['sp_banco']
         self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
         self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-
+  
 
     def tratarfiltrarprioridade(self, data, região, bu):
         consulta = f"""
@@ -58,7 +58,7 @@ class Dashboard():
         where "Turno da Agenda" = 'Manhã') a
         left join dim_parceiros
         on "HUB" = a.hub
-        where data >= '{data}' and data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
+        where data >= '{data}' and data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
         and macro_região = '{região}'
         and a.bu = '{bu}'
         group by macro_região, a.hub, a.bu, a.área, a.data
@@ -67,7 +67,7 @@ class Dashboard():
         self.prioridadetratada = pd.read_sql_query(consulta, con=self.conexão)
         self.prioridadetratada = pd.pivot_table(self.prioridadetratada, index=["região", "hub", "área"], columns=["data"], values=["score"])
         self.prioridadetratada = self.prioridadetratada.set_axis(self.prioridadetratada.columns.tolist(), axis=1).reset_index()
-        self.prioridadetratada.columns = ['região', 'hub', 'área', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4)), str(self.somardata(data, 5)), str(self.somardata(data, 6)), str(self.somardata(data, 7)), str(self.somardata(data, 8)), str(self.somardata(data, 9))] 
+        self.prioridadetratada.columns = ['região', 'hub', 'área', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4))] 
         return self.prioridadetratada
 
     def tratarfiltrarcapacidade(self, data, região, bu):
@@ -90,13 +90,13 @@ class Dashboard():
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador ) a 
         where a.bu = '{bu}'
-        and a.data >= '{data}' and a.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
+        and a.data >= '{data}' and a.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '4 days'
         group by a.status, a.data
         """
         self.capacidadetratada = pd.read_sql_query(consulta, con=self.conexão)
         self.capacidadetratada = pd.pivot_table(self.capacidadetratada, index=["status"], columns=["data"], values=["quant"])
         self.capacidadetratada = self.capacidadetratada.set_axis(self.capacidadetratada.columns.tolist(), axis=1).reset_index()
-        self.capacidadetratada.columns = ['status', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4)), str(self.somardata(data, 5)), str(self.somardata(data, 6)), str(self.somardata(data, 7)), str(self.somardata(data, 8)), str(self.somardata(data, 9))] 
+        self.capacidadetratada.columns = ['status', str(self.somardata(data, 0)), str(self.somardata(data, 1)), str(self.somardata(data, 2)), str(self.somardata(data, 3)), str(self.somardata(data, 4))] 
         return self.capacidadetratada
 
     def tratarescala(self):
@@ -122,7 +122,7 @@ class Dashboard():
 
     def filtrarescala(self, data, região, bu): 
         self.escalatratada['data'] = pd.to_datetime(self.escalatratada['data'])
-        filtrarescala = self.escalatratada[(self.escalatratada['data'] >= f'{data}') & (self.escalatratada['data'] <= f'{str(self.somardata(data, 9))}') & (self.escalatratada['região'] == f'{região}') & (self.escalatratada['bu'] == f'{bu}')] 
+        filtrarescala = self.escalatratada[(self.escalatratada['data'] >= f'{data}') & (self.escalatratada['data'] <= f'{str(self.somardata(data, 4))}') & (self.escalatratada['região'] == f'{região}') & (self.escalatratada['bu'] == f'{bu}')] 
         return filtrarescala
     
     def opçãodefiltroregião(self):
