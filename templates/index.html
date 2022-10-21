@@ -478,17 +478,9 @@
                         <table class="table" id="marcadorlinha">
                             <thead>
                                 <tr>
-                                    <th>região</th>
-                                    <th>hub</th>
-                                    <th>escala</th>
-                                    <th>data</th>
-                                    <th>id_técnica</th>
-                                    <th>técnica</th>
-                                    <th>inicio</th>
-                                    <th>fim</th>
-                                    <th>área</th>
-                                    <th>bu</th>
-                                    <th>status</th>
+                                    {% for escalaheader in escalaheading %}
+                                    <th>{{escalaheader}}</th>
+                                    {% endfor %}
                                 </tr>
                             </thead>
                             <tbody>
