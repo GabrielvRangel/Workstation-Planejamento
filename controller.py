@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, redirect
 from sqlalchemy import Time, create_engine
 import pandas as pd
 import model
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 app = Flask(__name__)
 dash = model.Dashboard()
@@ -11,21 +11,14 @@ agenda = model.Slots()
 regiões = dash.opçãodefiltroregião()
 bus = dash.opçãodefiltrobu()
 
-#chama todos os hubs/bu por uma função
-
-#função que vai fazer o loop
-#loop para verificar dias entre 30 a 60
-#comparar se todas as áreas ouros do dia atual está aberto de acordo com a prévia
-#verificar se temos técnicas disponíveis
-#abrir o máximo de técnicas que puder nessas áreas ouro LOOP
-#pegar uma técnica disponível
-#pegar uma área que precisa
-#alimentar os dados na tabela
-
-
 @app.route("/")
-def index():    
+def index():
     return render_template("index.html", regiões = regiões, bus = bus)
+
+@app.route("/agendasautomaticas")
+def agendasautomaticas():
+    
+    return 'Agendas automaticas verificadas.'
 
 @app.route("/filtrar", methods=["GET","POST"])
 def filtrar():
@@ -101,8 +94,16 @@ def abrirslots():
     regime = dash.regime(regime)
     idparceiro = dash.idparceiro(área)
     slotatual = datetime.strptime(inicioregime, "%H:%M:%S")
+    abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime)
+    print('Todos os slots abertos com sucesso!')
+    return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
+
+def abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime):
     print('Você está abrindo slot na área: ' + área + '.')
     print(' O ID do parceiro da área é: ' + idparceiro + '.')
+    slotatual = str(slotatual)
+    slotatual = datetime.strptime(slotatual, "%H:%M:%S")
+    fimregime = str(fimregime)
     if regime == 'rotating': 
         while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
@@ -117,7 +118,7 @@ def abrirslots():
                 dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
 
     elif regime == 'diarist':
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
+        while(datetime.strptime(slotatual, "%H:%M:%S") < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
             slotatualtexto = slotatual.strftime('%H:%M:%S')
             print('Abrindo slot ' + slotatualtexto + '...')
@@ -126,11 +127,24 @@ def abrirslots():
             id = agenda.iddoslot()
             dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
 
-    print('Todos os slots abertos com sucesso!')
-    return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
-
-
-
+def aberturaautomatica(hub, bu, dias, estrelasmin, estrelasmax, duração):
+    current_date = date.today()
+    eixoárea = 0
+    diaabertura = current_date + timedelta(dias)
+    área = agenda.áreasabertura(hub, bu, estrelasmin, estrelasmax)
+    linhasárea = len(área)
+    escala = dash.escalaautomatica(diaabertura, hub, bu)
+    while linhasárea > eixoárea:
+        disponibilidadeescala = escala[(escala['área'] == área.iloc[eixoárea]['área'])]
+        if len(disponibilidadeescala) == 1:
+            print('Área ' + área.iloc[eixoárea]['área'] + ' já está aberta.')
+            eixoárea = eixoárea + 1
+        else:
+            escalafiltro = escala[(escala['status'] == 'Disponível')]
+            abriragenda(escalafiltro.iloc[0]['data'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
+            eixoárea = eixoárea + 1
+            print('Área ' & área.iloc[eixoárea]['área'] & ' foi aberta com sucesso!')
+    return(print('Agendas automaticas verificadas.'))
 
 if __name__ == "__main__":
     app.run(debug= True)

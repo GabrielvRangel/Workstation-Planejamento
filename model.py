@@ -32,8 +32,18 @@ class Slots():
     def iddoslot(self):
         return self.slotid
 
-    
-       
+    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal):
+        linhas = [['461', 'São Cristóvão', 'vaccines', 'Sinergia VAC Ipanema - Botafogo', 5],
+        ['467', 'São Cristóvão', 'vaccines', 'Sinergia VAC Rocha Miranda - Irajá', 5],
+        ['466', 'São Cristóvão', 'vaccines', 'Sinergia VAC Cachambi - Madureira', 5],
+        ['736', 'Barra', 'vaccines', 'Sinergia VAC Américas - Recreio', 6],
+        ['534', 'São Cristóvão', 'vaccines', 'Sinergia VAC Botafogo', 1]]
+        df = pd.DataFrame(linhas, columns=['id_parceiro', 'hub', 'bu', 'área', 'classificação'])
+        df = df[(df['hub'] == hub)]
+        df = df[(df['bu'] == bu)]
+        df = df[(df['classificação'] >= classificaçãoinicial)]
+        df = df[(df['classificação'] <= classificaçãofinal)]
+        return df
 class Dashboard():    
     def __init__(self):
         usuario =  os.environ['usuario']
@@ -46,7 +56,7 @@ class Dashboard():
         sp_banco =  os.environ['sp_banco']
         self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
         self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-   
+
 
     def tratarfiltrarprioridade(self, data, região, bu):
         if bu == 'vaccines': bu = 'Imunizações' 
@@ -123,7 +133,33 @@ class Dashboard():
         """
         self.escalatratada = pd.read_sql_query(consulta, con=self.conexão)
         return self.escalatratada
-            
+
+    def escalaautomatica(self, data, hub, bu):
+        if bu == 'vaccines': bu = '%VAC%'
+        else: bu = '%LAB%'
+        consulta = f"""
+        select macro_região as região, jeeo.hub, jeeo.escala, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica, jeeo.data_inicio_previsto::time as hr_entrada, jeeo.data_fim_previsto::time as hr_saída, 
+        wsa."area" as área,
+        (case when jeeo.escala LIKE '%VAC%' then 'vaccines' when jeeo.escala LIKE '%LAB%' then 'laboratories' else 'híbrida' end) as bu,
+        (case when wsa.tecnica is not null then 'Ocupado' else 'Disponível' end) as status
+        from jornadas_escala.escala_operacional jeeo
+        left join workstation.slots_abertos wsa
+        on concat(wsa.data::text, wsa.id_tecnica::text) = concat(jeeo.data::text, jeeo.id_colaborador::text) 
+        left join dim_parceiros
+        on "HUB" = jeeo.hub
+        where escala LIKE '%Técnica%'
+        and previsto = 'Trabalho'
+        and jeeo.escala LIKE '{bu}'
+        and jeeo.hub = '{hub}'
+        and jeeo.data = '{data}' 
+        and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
+        and jeeo.data > current_date
+        group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
+        order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador
+        """
+        self.escalatratada = pd.read_sql_query(consulta, con=self.conexão)
+        return self.escalatratada
+
     def opçãodefiltroregião(self):
         consulta = f"select macro_região from dim_parceiros where macro_região is not null group by macro_região"
         opçãoregião = pd.read_sql_query(consulta, con=self.conexão)
@@ -182,3 +218,5 @@ class Dashboard():
         self.url = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={self.tkn}'
         return self.url
 
+# aberturaautomatica = Slots()
+# aberturaautomatica.slotautomatico('São Cristóvão', 'vaccines', 5, 6)
