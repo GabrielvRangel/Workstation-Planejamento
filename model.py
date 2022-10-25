@@ -83,8 +83,8 @@ class Dashboard():
         if bu == 'vaccines': bu = '%VAC%' 
         else: bu = '%LAB%'
         consulta = f"""    
-        select a.status, count(a.status) as quant, a.data from (
-        select macro_região as região, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica,
+        select a.status, sum(case a.dataincompleta = data::date when true then 1 else 0 end) as quant, a.data::date from (
+        select generate_series(DATE'{data}', to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days',INTERVAL'1 day') as data, macro_região as região, jeeo.data as dataincompleta, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica,
         (case when jeeo.escala LIKE '%VAC%' then 'vaccines' when jeeo.escala LIKE '%LAB%' then 'laboratories' else 'híbrida' end) as bu,
         (case when wsa.tecnica is not null then 'Ocupado' else 'Disponível' end) as status
         from jornadas_escala.escala_operacional jeeo
@@ -98,9 +98,9 @@ class Dashboard():
         and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
         and jeeo.data >= '{data}' and jeeo.data <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
         and jeeo.escala LIKE '{bu}'
-        group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
-        order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador ) a 
+        group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area") a 
         group by a.status, a.data
+        order by status, a.data
         """
         self.capacidadetratada = pd.read_sql_query(consulta, con=self.conexão)
         self.capacidadetratada = pd.pivot_table(self.capacidadetratada, index=["status"], columns=["data"], values=["quant"])
