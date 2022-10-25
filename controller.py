@@ -93,8 +93,30 @@ def abrirslots():
     duração = int(request.args.get('duração'))
     regime = dash.regime(regime)
     idparceiro = dash.idparceiro(área)
-    slotatual = inicioregime
-    abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime)
+    slotatual = datetime.strptime(inicioregime, "%H:%M:%S")
+    if regime == 'rotating': 
+        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
+            slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
+            if slotatual >= datetime.strptime('12:00:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
+                slotatual = datetime.strptime('13:00:00', "%H:%M:%S")
+            slotatualtexto = slotatual.strftime('%H:%M:%S')
+            if slotatualtexto != "19:00:00":    
+                print('Abrindo slot ' + slotatualtexto + '...')
+                token = dash.token()
+                agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, slotatualtexto, token)
+                id = agenda.iddoslot()
+                dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
+
+    elif regime == 'diarist':
+        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
+            slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
+            slotatualtexto = slotatual.strftime('%H:%M:%S')
+            print('Abrindo slot ' + slotatualtexto + '...')
+            token = dash.token()
+            agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, slotatualtexto, token)
+            id = agenda.iddoslot()
+            dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
+    
     print('Todos os slots abertos com sucesso!')
     return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
