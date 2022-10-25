@@ -444,7 +444,7 @@
                                 {% for quantidade in prioridaderegião %}
                                 <tr>
                                     <td>{{prioridaderegião[loop.index-1]}}</td>
-                                    <td>{{prioridadehub[loop.index-1]}}</td>
+                                    <td id="HUB{{loop.index-1}}">{{prioridadehub[loop.index-1]}}</td>
                                     <td id="{{loop.index-1}}" onclick="selecionaCelula(this.id)">
                                         {{prioridadeárea[loop.index-1]}}</td>
                                     <td id="A{{loop.index-1}}" onclick="selecionaCelula(this.id)">
@@ -529,8 +529,8 @@
                 $('#inicioregime').val(inicioregime);
                 fimregime = escalavalores[8];
                 $('#fimregime').val(fimregime);
-                hub = escalavalores[2];
-                $('#hub').val(hub);
+                // hub = escalavalores[2];
+                // $('#hub').val(hub);
                 id_técnica = escalavalores[5];
                 $('#id_técnica').val(id_técnica);
                 técnica = escalavalores[6];
@@ -554,11 +554,12 @@
             // função para pegar os dados de uma celula
             function selecionaCelula(id) {
                 linha = $('#' + id.substring(1, id.length)).text();
+                hub = $('#HUB' + id.substring(1, id.length)).text();
                 coluna = $('#' + id.substring(1, 0)).text();
                 linha = linha.replace(/\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s\s|\r\n|\r|\n/, "");
                 $('#lin').val(linha);
                 $('#col').val(coluna);
-
+                $('#hub').val(hub);
                 // filtrar a data atual
                 var tds = document.querySelectorAll('table td[data-estado]');
                 var estado = coluna;
