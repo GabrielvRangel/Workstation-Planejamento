@@ -93,7 +93,7 @@ def abrirslots():
     duração = int(request.args.get('duração'))
     regime = dash.regime(regime)
     idparceiro = dash.idparceiro(área)
-    slotatual = datetime.strptime(inicioregime, "%H:%M:%S")
+    slotatual = inicioregime
     abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime)
     print('Todos os slots abertos com sucesso!')
     return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
