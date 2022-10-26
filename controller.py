@@ -140,7 +140,7 @@ def abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, t
                 dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
 
     elif regime == 'diarist':
-        while(datetime.strptime(slotatual, "%H:%M:%S") < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
+        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
             slotatualtexto = slotatual.strftime('%H:%M:%S')
             print('Abrindo slot ' + slotatualtexto + '...')
@@ -153,20 +153,30 @@ def aberturaautomatica(hub, bu, dias, estrelasmin, estrelasmax, duração):
     current_date = date.today()
     eixoárea = 0
     diaabertura = current_date + timedelta(dias)
-    área = agenda.áreasabertura(hub, bu, estrelasmin, estrelasmax)
+    área = dash.áreasabertura(hub, bu, estrelasmin, estrelasmax)
     linhasárea = len(área)
     escala = dash.escalaautomatica(diaabertura, hub, bu)
-    while linhasárea > eixoárea:
-        disponibilidadeescala = escala[(escala['área'] == área.iloc[eixoárea]['área'])]
-        if len(disponibilidadeescala) == 1:
-            print('Área ' + área.iloc[eixoárea]['área'] + ' já está aberta.')
-            eixoárea = eixoárea + 1
-        else:
-            escalafiltro = escala[(escala['status'] == 'Disponível')]
-            abriragenda(escalafiltro.iloc[0]['data'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
-            eixoárea = eixoárea + 1
-            print('Área ' & área.iloc[eixoárea]['área'] & ' foi aberta com sucesso!')
-    return(print('Agendas automaticas verificadas.'))
+    linhasescala = len(escala)
+    if linhasescala == 0: 
+        linhasárea = 0 
+        print('Não temos técnicas para trabalhar nesse dia.')
+    else: 
+        while linhasárea > eixoárea:
+            escala = dash.escalaautomatica(diaabertura, hub, bu)
+            disponibilidadeescala = escala[(escala['área'] == área.iloc[eixoárea]['área'])]
+            técnicadisponível = len(escala[escala['status'] == 'Disponível'])
+            if len(disponibilidadeescala) == 1:
+                print('Área ' + área.iloc[eixoárea]['área'] + ' já está aberta.')
+                eixoárea = eixoárea + 1
+            elif técnicadisponível == 0:
+                print('Nenhuma técnica disponível para abrir slots.')
+                linhasárea = 0
+            else:
+                escalafiltro = escala[(escala['status'] == 'Disponível')]
+                abriragenda(escalafiltro.iloc[0]['data'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
+                print('Área ' + área.iloc[eixoárea]['área'] + ' foi aberta com sucesso!')
+                eixoárea = eixoárea + 1
+    return(print('Dia ' + str(diaabertura) + ' verificado com sucesso.'))
 
 if __name__ == "__main__":
     app.run(debug= True)
