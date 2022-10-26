@@ -31,19 +31,6 @@ class Slots():
     
     def iddoslot(self):
         return self.slotid
-
-    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal):
-        linhas = [['461', 'São Cristóvão', 'vaccines', 'Sinergia VAC Ipanema - Botafogo', 5],
-        ['467', 'São Cristóvão', 'vaccines', 'Sinergia VAC Rocha Miranda - Irajá', 5],
-        ['466', 'São Cristóvão', 'vaccines', 'Sinergia VAC Cachambi - Madureira', 5],
-        ['736', 'Barra', 'vaccines', 'Sinergia VAC Américas - Recreio', 6],
-        ['534', 'São Cristóvão', 'vaccines', 'Sinergia VAC Botafogo', 1]]
-        df = pd.DataFrame(linhas, columns=['id_parceiro', 'hub', 'bu', 'área', 'classificação'])
-        df = df[(df['hub'] == hub)]
-        df = df[(df['bu'] == bu)]
-        df = df[(df['classificação'] >= classificaçãoinicial)]
-        df = df[(df['classificação'] <= classificaçãofinal)]
-        return df
 class Dashboard():    
     def __init__(self):
         usuario =  os.environ['usuario']
@@ -57,6 +44,15 @@ class Dashboard():
         self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
         self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
 
+    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal):
+        consulta = f"""
+        select id_sinergia::text as id_parceiro, "HUB" as hub, parceiro_tipo as bu, nome_sinergia as área, SUBSTRING("Categoria Sinergia" from 1 for 1)::int  as classificação 
+        from last_mile.analise_sinergias 
+        where "HUB" = '{hub}' and parceiro_tipo = '{bu}' 
+        and SUBSTRING("Categoria Sinergia" from 1 for 1)::int >= {classificaçãoinicial} and SUBSTRING("Categoria Sinergia" from 1 for 1)::int <= {classificaçãofinal}
+        """
+        df = pd.read_sql_query(consulta, con=self.conexão)
+        return df
 
     def tratarfiltrarprioridade(self, data, região, bu):
         if bu == 'vaccines': bu = 'Imunizações' 
