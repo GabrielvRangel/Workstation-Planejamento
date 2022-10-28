@@ -43,12 +43,13 @@ class Dashboard():
         sp_banco =  os.environ['sp_banco']
         self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
         self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-
+    
     def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal):
         consulta = f"""
         select id_sinergia::text as id_parceiro, "HUB" as hub, parceiro_tipo as bu, nome_sinergia as área, SUBSTRING("Categoria Sinergia" from 1 for 1)::int  as classificação 
         from last_mile.analise_sinergias 
         where "HUB" = '{hub}' and parceiro_tipo = '{bu}' 
+        and id_sinergia <> 575
         and SUBSTRING("Categoria Sinergia" from 1 for 1)::int >= {classificaçãoinicial} and SUBSTRING("Categoria Sinergia" from 1 for 1)::int <= {classificaçãofinal}
         """
         df = pd.read_sql_query(consulta, con=self.conexão)

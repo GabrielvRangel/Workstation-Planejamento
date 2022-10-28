@@ -94,7 +94,7 @@ def abrirslots():
     regime = dash.regime(regime)
     idparceiro = dash.idparceiro(área)
     slotatual = datetime.strptime(inicioregime, "%H:%M:%S")
-    if regime == 'rotating': 
+    if (regime == 'rotating') or (regime == 'diarist' and datetime.strptime(fimregime, "%H:%M:%S") > datetime.strptime("14:00:00", "%H:%M:%S")): 
         while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
             if slotatual >= datetime.strptime('12:00:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
@@ -126,7 +126,7 @@ def abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, t
     slotatual = str(slotatual)
     slotatual = datetime.strptime(slotatual, "%H:%M:%S")
     fimregime = str(fimregime)
-    if regime == 'rotating': 
+    if (regime == 'rotating') or (regime == 'diarist' and datetime.strptime(fimregime, "%H:%M:%S") > datetime.strptime("14:00:00", "%H:%M:%S")): 
         while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
             if slotatual >= datetime.strptime('12:00:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
