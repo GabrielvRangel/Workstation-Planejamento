@@ -15,17 +15,11 @@ bus = dash.opçãodefiltrobu()
 def index():
     return render_template("index.html", regiões = regiões, bus = bus)
 
-@app.route("/agendasautomaticas")
-def agendasautomaticas():
-    
-    return 'Agendas automaticas verificadas.'
-
 @app.route("/filtrar", methods=["GET","POST"])
 def filtrar():
     date = request.args.get('date')
     região = request.args.get('região')
     bu = request.args.get('bu')
-    #ação depois de filtrar
     if not date or região == "Escolha a região" or bu == "Escolha o produto":
         return render_template("index.html", regiões= regiões, bus= bus)
     else:
@@ -93,31 +87,9 @@ def abrirslots():
     duração = int(request.args.get('duração'))
     regime = dash.regime(regime)
     idparceiro = dash.idparceiro(área)
-    slotatual = datetime.strptime(inicioregime, "%H:%M:%S")
-    if (regime == 'rotating') or (regime == 'diarist' and datetime.strptime(fimregime, "%H:%M:%S") > datetime.strptime("14:00:00", "%H:%M:%S")): 
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
-            slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
-            if slotatual >= datetime.strptime('12:00:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
-                slotatual = datetime.strptime('13:00:00', "%H:%M:%S")
-            slotatualtexto = slotatual.strftime('%H:%M:%S')
-            if slotatualtexto != "19:00:00":    
-                print('Abrindo slot ' + slotatualtexto + '...')
-                token = dash.token()
-                agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, slotatualtexto, token)
-                id = agenda.iddoslot()
-                dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
-
-    elif regime == 'diarist':
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
-            slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
-            slotatualtexto = slotatual.strftime('%H:%M:%S')
-            print('Abrindo slot ' + slotatualtexto + '...')
-            token = dash.token()
-            agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, slotatualtexto, token)
-            id = agenda.iddoslot()
-            dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
-    
-    print('Todos os slots abertos com sucesso!')
+    slotatual = inicioregime
+    print('próximo de abrir agenda...')
+    abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime)
     return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
 def abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime):
@@ -126,57 +98,133 @@ def abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, t
     slotatual = str(slotatual)
     slotatual = datetime.strptime(slotatual, "%H:%M:%S")
     fimregime = str(fimregime)
+    quantidadeslots = 0
+    slotsdaagenda = []
     if (regime == 'rotating') or (regime == 'diarist' and datetime.strptime(fimregime, "%H:%M:%S") > datetime.strptime("14:00:00", "%H:%M:%S")): 
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
+        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração+20, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
-            if slotatual >= datetime.strptime('12:00:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
+            if slotatual >= datetime.strptime('11:30:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
                 slotatual = datetime.strptime('13:00:00', "%H:%M:%S")
             slotatualtexto = slotatual.strftime('%H:%M:%S')
             if slotatualtexto != "19:00:00":    
-                print('Abrindo slot ' + slotatualtexto + '...')
-                token = dash.token()
-                agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, slotatualtexto, token)
-                id = agenda.iddoslot()
-                dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
+                print('Registrando slot ' + slotatualtexto + '...')
+                slotsdaagenda.append({"time": slotatualtexto, "supplier_id": idparceiro, "duration": duração})
+                quantidadeslots = quantidadeslots + 1
 
     elif regime == 'diarist':
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração, seconds=0)):
+        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração+30, seconds=0)):
             slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
             slotatualtexto = slotatual.strftime('%H:%M:%S')
-            print('Abrindo slot ' + slotatualtexto + '...')
-            token = dash.token()
-            agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, slotatualtexto, token)
-            id = agenda.iddoslot()
-            dash.inserirdados( id, data, slotatual, área, hub, regime, produto, id_técnica, técnica)
+            print('Registrando slot ' + slotatualtexto + '...') 
+            slotsdaagenda.append({"time": slotatualtexto, "supplier_id": idparceiro, "duration": duração})
+            quantidadeslots = quantidadeslots + 1
+    print('Consultando token...')
+    token = dash.token()
+    agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, token, slotsdaagenda, f'{área}', f'{hub}', id_técnica, técnica)
+    return print('Todos os slots abertos com sucesso!')
 
-def aberturaautomatica(hub, bu, dias, estrelasmin, estrelasmax, duração):
+@app.route("/abrirslotsminimos", methods=["GET","POST"])
+def abrirslotsminimos():
+    hub = request.args.get('hub') 
+    dias = 60
+    # SLOTS A CADA 15 DIAS
+    aberturaautomatica(f'{hub}', 'laboratories', dias, 15, 0, 2, 40, 0)
+    aberturaautomatica(f'{hub}', 'vaccines', dias, 15, 0, 2, 40, 0)
+
+    # SLOTS A CADA 7 DIAS     
+    aberturaautomatica(f'{hub}', 'laboratories', dias, 7, 3, 4, 30, 0)
+    aberturaautomatica(f'{hub}', 'vaccines', dias, 7, 3, 4, 40, 0)
+
+    # SLOTS A CADA 1 DIA
+    aberturaautomatica(f'{hub}', 'laboratories', dias, 1, 5, 6, 30, 0)
+    aberturaautomatica(f'{hub}', 'vaccines', dias, 1, 5, 6, 40, 0)
+    return 'Agendas abertas com sucesso.'
+
+@app.route("/abrirslotsminimossmallops", methods=["GET","POST"])
+def abrirslotsminimossmallops():
+    hub = request.args.get('hub')
+    dias = 46 
+    # SLOTS A CADA 15 DIAS
+    aberturaautomatica(f'{hub}', 'laboratories', dias, 15, 0, 2, 50, 0)
+    aberturaautomatica(f'{hub}', 'vaccines', dias, 15, 0, 2, 50, 0)
+    
+    # SLOTS A CADA 7 DIAS     
+    aberturaautomatica(f'{hub}', 'laboratories', dias, 7, 3, 4, 50, 0)
+    aberturaautomatica(f'{hub}', 'vaccines', dias, 7, 3, 4, 50, 0)
+    
+    # SLOTS A CADA 1 DIA
+    aberturaautomatica(f'{hub}', 'laboratories', dias, 1, 5, 6, 50, 0)
+    aberturaautomatica(f'{hub}', 'vaccines', dias, 1, 5, 6, 50, 0)
+    return 'Agendas abertas com sucesso.'
+
+@app.route("/abrirslotssobdemanda", methods=["GET","POST"])
+def abrirslotssobdemanda():
+    hub = request.args.get('hub')
+    dias = 5
+    # SLOTS A CADA 15 DIAS
+    aberturaautomaticasobdemanda('São Cristóvão', 'vaccines', dias, 0.80, 1)
+    
+    return 'Agendas abertas com sucesso.'
+
+
+def aberturaautomatica(hub, bu, dias, rangedias, estrelasmin, estrelasmax, duração, domingo):
+    while dias > 15:
+        current_date = date.today()
+        eixoárea = 0
+        diaabertura = current_date + timedelta(dias)
+        rangediasfinal = diaabertura + timedelta(rangedias)
+        área = dash.áreasabertura(hub, bu, 0, 7, domingo)
+        área = área[(área['classificação'] >= estrelasmin) &( área['classificação'] <= estrelasmax)]
+        linhasárea = len(área)
+        escala = dash.escalaautomatica(diaabertura, hub, bu, diaabertura)
+        linhasescala = len(escala)
+        print('Verificando o dia ' + str(diaabertura) + ' ...')
+        if linhasescala == 0: 
+            linhasárea = 0 
+            print('Não temos técnica disponível para trabalhar nesse dia.')
+        else: 
+            while linhasárea > eixoárea:
+                escala = dash.escalaautomatica(diaabertura, hub, bu, rangediasfinal)
+                disponibilidadeescala = escala[(escala['área'] == área.iloc[eixoárea]['área'])]
+                escala = dash.escalaautomatica(diaabertura, hub, bu, diaabertura)
+                técnicadisponível = len(escala[escala['status'] == 'Disponível'])
+                if len(disponibilidadeescala) >= 1:
+                    print('A área ' + área.iloc[eixoárea]['área'] + ' já está aberta no range de dias solicitado.')
+                    eixoárea = eixoárea + 1
+                elif técnicadisponível == 0:
+                    print('Não temos técnica disponível para trabalhar nesse dia na ' + área.iloc[eixoárea]['área'] + '.')
+                    linhasárea = 0
+                else:
+                    escalafiltro = escala[(escala['status'] == 'Disponível')]
+                    abriragenda(escalafiltro.iloc[0]['data'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
+                    print('Slots na ' + área.iloc[eixoárea]['área'] + ' abertos com sucesso!')
+                    eixoárea = eixoárea + 1
+        dias = dias - rangedias
+    return(print('Dia ' + str(diaabertura) + ' verificado.'))
+
+def aberturaautomaticasobdemanda(hub, bu, dias, taxaocupacao, removerduplicado):
     current_date = date.today()
-    eixoárea = 0
     diaabertura = current_date + timedelta(dias)
-    área = dash.áreasabertura(hub, bu, estrelasmin, estrelasmax)
-    linhasárea = len(área)
-    escala = dash.escalaautomatica(diaabertura, hub, bu)
-    linhasescala = len(escala)
-    if linhasescala == 0: 
-        linhasárea = 0 
-        print('Não temos técnicas para trabalhar nesse dia.')
-    else: 
-        while linhasárea > eixoárea:
-            escala = dash.escalaautomatica(diaabertura, hub, bu)
-            disponibilidadeescala = escala[(escala['área'] == área.iloc[eixoárea]['área'])]
-            técnicadisponível = len(escala[escala['status'] == 'Disponível'])
-            if len(disponibilidadeescala) == 1:
-                print('Área ' + área.iloc[eixoárea]['área'] + ' já está aberta.')
-                eixoárea = eixoárea + 1
-            elif técnicadisponível == 0:
-                print('Nenhuma técnica disponível para abrir slots.')
-                linhasárea = 0
-            else:
-                escalafiltro = escala[(escala['status'] == 'Disponível')]
-                abriragenda(escalafiltro.iloc[0]['data'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
-                print('Área ' + área.iloc[eixoárea]['área'] + ' foi aberta com sucesso!')
-                eixoárea = eixoárea + 1
-    return(print('Dia ' + str(diaabertura) + ' verificado com sucesso.'))
+    tabelaareastaxadeocupacao = dash.filtrartaxaocupacao(hub, bu, diaabertura, taxaocupacao)
+    if removerduplicado == 1:
+        tabelaareastaxadeocupacao = tabelaareastaxadeocupacao.drop_duplicates(subset='parceiro_nome', keep='first')
+    escala = dash.escalaautomatica(diaabertura, hub, bu, diaabertura)
+    linhastabelataxadeocupacao = len(tabelaareastaxadeocupacao)
+    print('Verificando dia ' + str(diaabertura) + '...')
+    while linhastabelataxadeocupacao > 0:
+        quantidadetécnicadisponível = len(escala[escala['status'] == 'Disponível'])
+        if linhastabelataxadeocupacao == 0:
+            print('Não temos nenhuma área com a taxa de ocupação maior que ' + str(taxaocupacao))
+        elif quantidadetécnicadisponível == 0:
+            print('Não temos técnica disponível para trabalhar nesse dia.')
+            linhastabelataxadeocupacao = 0
+        else:
+            abriragenda(tabelaareastaxadeocupacao.iloc[linhastabelataxadeocupacao - 1]['slot_date'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
+            print('Slots na ' + tabelaareastaxadeocupacao.iloc[linhastabelataxadeocupacao - 1]['parceiro_nome'] + ' abertos com sucesso!')
+            linhastabelataxadeocupacao = linhastabelataxadeocupacao - 1
+        return(print('Dia ' + str(diaabertura) + ' verificado.'))
+        
+
 
 if __name__ == "__main__":
     app.run(debug= True)
