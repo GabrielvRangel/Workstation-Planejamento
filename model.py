@@ -7,7 +7,7 @@ import os
 import json
 import sqlalchemy
 class Slots():
-    def abrirslots(self, data, regime, bu, idparceiro, slot_hora, urltoken):    
+    def abrirslots(self, data, regime, bu, idparceiro, urltoken, slotsdaagenda, área, hub, id_tecnica, tecnica):    
         payload = {
             "bookings": [
                 {
@@ -15,45 +15,88 @@ class Slots():
                     "work_shift": f"{regime}", # tipo de regime (diarist = Diarista | rotating = Plantonista)
                     "product_type": f"{bu}", # Tipo de produto da agenda (vaccines = Vacinas | laboratories = Exames) 
                     "supplier_id": idparceiro, # ID da região onde a agenda será alocada
-                    "slots": [
-                        { "time": f"{slot_hora}", "supplier_id": idparceiro, "duration": 40 }
-                    ] # lista de slots seguindo a estrutura, Opcional
+                    "slots": slotsdaagenda # lista de slots seguindo a estrutura, Opcional
                 }
             ]
         }
-        
+
         response = requests.post(url=urltoken, json=payload)
         self.dados = json.loads(response.text)
         self.dados2 = self.dados[0]
-        self.dados3 = self.dados2['slots']
-        self.dados4 = self.dados3[0]
-        self.slotid = self.dados4['id']
-    
-    def iddoslot(self):
-        return self.slotid
+        self.ids_dos_slots_da_agenda = self.dados2['slots']
+        quantidade_slots_matriz = len(self.ids_dos_slots_da_agenda)
+        tabela_slots_da_agenda = []
+        while quantidade_slots_matriz > 0:
+            self.selecionar_agenda = self.ids_dos_slots_da_agenda[quantidade_slots_matriz - 1]
+            self.slotid = self.selecionar_agenda['id'] 
+            self.horario = self.selecionar_agenda['date'] 
+            tabela_slots_da_agenda.append({'id_slot':self.slotid,'data': data,'horario': str(self.horario),'area': área,'hub': hub,'regime': regime,'produto': bu,'id_tecnica': id_tecnica,'tecnica': tecnica})
+            quantidade_slots_matriz = quantidade_slots_matriz - 1
+        dash = Dashboard()
+        dash.inserirdados(tabela_slots_da_agenda)
 class Dashboard():    
     def __init__(self):
-        usuario =  os.environ['usuario']
-        senha =  os.environ['senha']
-        servidor =  os.environ['servidor']
-        banco =  os.environ['banco']
-        sp_usuario =  os.environ['sp_usuario']
-        sp_senha =  os.environ['sp_senha']
-        sp_servidor =  os.environ['sp_servidor']
-        sp_banco =  os.environ['sp_banco']
-        self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-    
-    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal):
+        # usuario =  os.environ['usuario']
+        # senha =  os.environ['senha']
+        # servidor =  os.environ['servidor']
+        # banco =  os.environ['banco']
+        # sp_usuario =  os.environ['sp_usuario']
+        # sp_senha =  os.environ['sp_senha']
+        # sp_servidor =  os.environ['sp_servidor']
+        # sp_banco =  os.environ['sp_banco']
+        # self.conexão = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        # self.serverproduction = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+        self.conexão = create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""")
+        self.serverproduction = create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""")
+
+    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal, domingo):
+        if (bu == 'vaccines'):
+            bu_nome_sinergia = 'VAC'
+        else:
+            bu_nome_sinergia = 'LAB'
+
         consulta = f"""
-        select id_sinergia::text as id_parceiro, "HUB" as hub, parceiro_tipo as bu, nome_sinergia as área, SUBSTRING("Categoria Sinergia" from 1 for 1)::int  as classificação 
-        from last_mile.analise_sinergias 
-        where "HUB" = '{hub}' and parceiro_tipo = '{bu}' 
-        and id_sinergia <> 575
-        and SUBSTRING("Categoria Sinergia" from 1 for 1)::int >= {classificaçãoinicial} and SUBSTRING("Categoria Sinergia" from 1 for 1)::int <= {classificaçãofinal}
+        select b.id_parceiro, b.hub, b.bu, b.área, b.classificação, b."nome_sinergia", b.id_sinergia from (
+        select a.id_parceiro, a.hub, a.bu, a.área, case when a.área like '%Domingo%' then 7 when "nome_sinergia" like '%Domingo%' then 7 else a.classificação end as classificação, 
+        case when ssa."nome_sinergia" is null then área when ssa."nome_sinergia" like '%desativado%' then área else ssa."nome_sinergia" end as "nome_sinergia" ,
+        case when ssa.id_sinergia is null then 0 when ssa."nome_sinergia" like '%desativado%' then id_area else ssa.id_sinergia end as id_sinergia from (
+        select id_sinergia::text as id_parceiro, "HUB" as hub, parceiro_tipo as bu, nome_sinergia as área, SUBSTRING("Categoria Sinergia" from 1 for 1)::int  as classificação from last_mile.analise_sinergias
+        union
+        select id_parceiro::text as id_parceiro, "HUB" as hub, parceiro_tipo as bu, parceiro_nome as área, SUBSTRING("Classificação" from 1 for 1)::int as classificação from last_mile.analise_areas ) a
+        left join staging.sinergia_e_areas ssa
+        on ssa.nome_area = a.área
+        where a.hub = '{hub}' and a.bu = '{bu}' 
+        and a.classificação >= 0 and a.classificação <= 6
+        and a.área not like '%Global%' and a.área not like '%[%' and a.área not like '%]%' and a.área not like '%teste1%' and a.área not like '%[desativado]%' and a.área not like '%Beep%'
+        group by a.id_parceiro, a.hub, a.bu, a.área, a.classificação, ssa.id_sinergia, "nome_sinergia", ssa.id_area
+        order by a.área desc ) b
+        where b."nome_sinergia" like '%{bu_nome_sinergia}%' and b."nome_sinergia" not like '%Global%' and b."nome_sinergia" not like '%[%' and b."nome_sinergia" not like '%]%' and b."nome_sinergia" not like '%teste1%' and b."nome_sinergia" not like '%[desativado]%' and b."nome_sinergia" not like '%Beep%'
+        group by nome_sinergia, id_parceiro, hub, bu, área, classificação, id_sinergia
         """
         df = pd.read_sql_query(consulta, con=self.conexão)
+        if domingo == 1:
+            df = df[df['classificação'] == 7]
+        else:
+            df = df[df['classificação'] != 7]
+        linhasdf = len(df)
+        eixodf = 0
+        df['status abertura'] = 0
+        while linhasdf > eixodf:
+            id_sinergia = str(df.iloc[eixodf]['id_sinergia'])
+            quantidadeárea = len(df[df['id_parceiro'] == id_sinergia])
+            valor_id_sinergia = str(df.iat[eixodf, 6])
+            if (quantidadeárea == 0):
+                df.iat[eixodf, 7] = 1
+            elif quantidadeárea <= 1 and str(df.iat[eixodf, 0]) == valor_id_sinergia:
+                df.iat[eixodf, 7] = 1
+            else:
+                df.iat[eixodf, 7] = 0
+            eixodf = eixodf + 1
+        df = df[df['status abertura'] == 1]
+        df = df[(df['classificação'] >= classificaçãoinicial)]
+        df = df[(df['classificação'] <= classificaçãofinal)]
         return df
+
 
     def tratarfiltrarprioridade(self, data, região, bu):
         if bu == 'vaccines': bu = 'Imunizações' 
@@ -130,8 +173,8 @@ class Dashboard():
         """
         self.escalatratada = pd.read_sql_query(consulta, con=self.conexão)
         return self.escalatratada
-
-    def escalaautomatica(self, data, hub, bu):
+    
+    def escalaautomatica(self, data, hub, bu, rangedias):
         if bu == 'vaccines': bu = '%VAC%'
         else: bu = '%LAB%'
         consulta = f"""
@@ -148,7 +191,7 @@ class Dashboard():
         and previsto = 'Trabalho'
         and jeeo.escala LIKE '{bu}'
         and jeeo.hub = '{hub}'
-        and jeeo.data = '{data}' 
+        and jeeo.data >= '{data}' and jeeo.data <= '{rangedias}' 
         and (lancamento <> 'Afastamento INSS' and lancamento <> 'Treinamento' and lancamento <> 'Licença maternidade' and lancamento <> 'Curso/Evento' and lancamento <> 'Férias' and lancamento <> 'Recesso' and lancamento <> 'Licença nojo/óbito' and lancamento <> 'Atividade administrativa' and lancamento <> 'Folga' and lancamento <> 'Folga extra' and lancamento <> 'Licença gala' or lancamento is null)
         and jeeo.data > current_date
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area"
@@ -198,8 +241,8 @@ class Dashboard():
             regime = 'diarist'
         return regime
 
-    def inserirdados(self, idslot, data, horario, parceiro, hub, regime, produto, id_tecnica, tecnica):
-        df = pd.DataFrame([[idslot, data, horario, parceiro, hub, regime, produto, id_tecnica, tecnica]], columns=['id_slot', 'data', 'horario', 'area', 'hub', 'regime', 'produto', 'id_tecnica', 'tecnica'])
+    def inserirdados(self, tabela_slots_da_agenda):
+        df = pd.DataFrame(tabela_slots_da_agenda, columns=['id_slot', 'data', 'horario', 'area', 'hub', 'regime', 'produto', 'id_tecnica', 'tecnica'])
         df.to_sql(con=self.conexão, name='slots_abertos', schema='workstation', if_exists='append', method='multi', index=False)
         consulta = f"select * from workstation.slots_abertos"
         tabela = pd.read_sql_query(consulta, con=self.conexão)
@@ -215,5 +258,38 @@ class Dashboard():
         self.url = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={self.tkn}'
         return self.url
 
-# aberturaautomatica = Slots()
-# aberturaautomatica.slotautomatico('São Cristóvão', 'vaccines', 5, 6)
+    
+    def filtrartaxaocupacao(self, hub, bu, data, taxaocupacao):
+        if bu == 'vaccines': bu = '%VAC%' 
+        else: bu = '%LAB%'
+        consulta = f"""
+        select a."HUB", a."slot_date", a."parceiro_nome", a."taxa_de_ocupacao", "Prioridade", "ID Área", "Taxa de Ocupação Simulada" from ( 
+        select 
+        dp."HUB"
+        ,(spss.slot_date-interval '3 hours')::date as slot_date
+        ,count(id) as total_slots
+        ,sum(case when call_product_id is null then 0 else 1 end) as slots_ocupados
+        ,sum(case when call_product_id is null then 0 else 1 end)/count(id)::numeric as taxa_de_ocupacao
+        ,dp.parceiro_nome 
+        ,dp.parceiro_ativo
+        from sp_product_schedule_slots spss
+        left join dim_parceiros dp 
+        on dp.id_parceiro = spss.supplier_id 
+        where slot_date::date = '{data}'
+        and parceiro_nome not like '%desativado%'
+        and parceiro_nome like '{bu}'
+        and "HUB" = '{hub}'
+        and spss.id not in (select * from stg_slots_bloqueados ssb)
+        and dp.parceiro_ativo = true
+        group by dp."HUB",(spss.slot_date-interval '3 hours')::date, dp.parceiro_tipo,dp.parceiro_nome,dp.parceiro_ativo) a
+        left join last_mile.sugestoes_alocacao lmsa
+        on concat(a."slot_date", a."parceiro_nome") = concat(lmsa."Data da Agenda",lmsa."Área")
+        where lmsa."Turno da Agenda" = 'Manhã'
+        order by "Prioridade" 
+        """
+        filtrartaxaocupacao = pd.read_sql_query(consulta, con=self.conexão)
+        filtrartaxaocupacao = filtrartaxaocupacao[filtrartaxaocupacao['taxa_de_ocupacao'] >= taxaocupacao]
+        return filtrartaxaocupacao
+
+aberturaautomatica = Dashboard()
+print(aberturaautomatica.áreasabertura('Campinas', 'vaccines', 0, 6, 0))
