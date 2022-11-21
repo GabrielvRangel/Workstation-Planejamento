@@ -49,7 +49,7 @@ class Dashboard():
         self.conexão = create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""")
         self.serverproduction = create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""")
 
-    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal, domingo):
+    def áreasabertura(self, hub, bu, classificaçãoinicial, classificaçãofinal):
         if (bu == 'vaccines'):
             bu_nome_sinergia = 'VAC'
         else:
@@ -74,10 +74,6 @@ class Dashboard():
         group by nome_sinergia, id_parceiro, hub, bu, área, classificação, id_sinergia
         """
         df = pd.read_sql_query(consulta, con=self.conexão)
-        if domingo == 1:
-            df = df[df['classificação'] == 7]
-        else:
-            df = df[df['classificação'] != 7]
         linhasdf = len(df)
         eixodf = 0
         df['status abertura'] = 0
@@ -93,8 +89,7 @@ class Dashboard():
                 df.iat[eixodf, 7] = 0
             eixodf = eixodf + 1
         df = df[df['status abertura'] == 1]
-        df = df[(df['classificação'] >= classificaçãoinicial)]
-        df = df[(df['classificação'] <= classificaçãofinal)]
+        df = df[(df['classificação'] >= classificaçãoinicial) &( df['classificação'] <= classificaçãofinal)]
         return df
 
 
@@ -292,4 +287,4 @@ class Dashboard():
         return filtrartaxaocupacao
 
 aberturaautomatica = Dashboard()
-print(aberturaautomatica.áreasabertura('Campinas', 'vaccines', 0, 6, 0))
+print(aberturaautomatica.áreasabertura('Vila Olímpia', 'vaccines', 0, 6))
