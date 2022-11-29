@@ -1,6 +1,5 @@
 from sqlite3 import Timestamp
 from sqlalchemy import Time, create_engine
-import sqlalchemy
 import pandas as pd
 import os
 
@@ -17,8 +16,8 @@ class Banco_de_dados():
         sp_senha =  os.environ['sp_senha']
         sp_servidor =  os.environ['sp_servidor']
         sp_banco =  os.environ['sp_banco']
-        self.bi = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        self.tech = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+        self.bi = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        self.tech = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
 
     def consulta(self, servidor, consulta):
         if servidor == 'tech':
