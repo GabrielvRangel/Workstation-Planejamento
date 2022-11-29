@@ -3,207 +3,119 @@ from flask import Flask, render_template, request, redirect
 from sqlalchemy import Time, create_engine
 import pandas as pd
 import model
-from datetime import date, datetime, timedelta
+import parametros
+from datetime import date, timedelta
 
 app = Flask(__name__)
-dash = model.Dashboard()
-agenda = model.Slots()
-regiões = dash.opçãodefiltroregião()
-bus = dash.opçãodefiltrobu()
+
+Agenda = model.Agenda()
+Area = model.Area()
+Dashboard = model.Dashboard()
+Parametros = parametros.Parametros_internos()
+Slots = model.Slots()
+lista_macro_regiao = Dashboard.retorna_lista_macro_regiao()
+lista_bu = Dashboard.retorna_lista_bu()
 
 @app.route("/")
 def index():
-    return render_template("index.html", regiões = regiões, bus = bus)
+    return render_template("index.html", regiões = lista_macro_regiao, bus = lista_bu)
 
 @app.route("/filtrar", methods=["GET","POST"])
 def filtrar():
     date = request.args.get('date')
-    região = request.args.get('região')
+    regiao = request.args.get('região')
     bu = request.args.get('bu')
-    if not date or região == "Escolha a região" or bu == "Escolha o produto":
-        return render_template("index.html", regiões= regiões, bus= bus)
-    else:
-        capacidade = dash.tratarfiltrarcapacidade(date, região, bu)
-        capacidadeheading = list(capacidade)
-        capacidadestatus = list(capacidade['status'])
-        capacidadedate1 = list(capacidade[str(dash.somardata(date, 0))])
-        capacidadedate2 = list(capacidade[str(dash.somardata(date, 1))])
-        capacidadedate3 = list(capacidade[str(dash.somardata(date, 2))])
-        capacidadedate4 = list(capacidade[str(dash.somardata(date, 3))])
-        capacidadedate5 = list(capacidade[str(dash.somardata(date, 4))])
-        capacidadedate6 = list(capacidade[str(dash.somardata(date, 5))])
-        capacidadedate7 = list(capacidade[str(dash.somardata(date, 6))])
-        capacidadedate8 = list(capacidade[str(dash.somardata(date, 7))])
-        capacidadedate9 = list(capacidade[str(dash.somardata(date, 8))])
-        capacidadedate10 = list(capacidade[str(dash.somardata(date, 9))])
-        prioridade = dash.tratarfiltrarprioridade(date, região, bu)
-        prioridadeheading = list(prioridade)
-        prioridaderegião = list(prioridade['região'])
-        prioridadehub = list(prioridade['hub'])
-        prioridadeárea = list(prioridade['área'])
-        prioridadedate1 = list(prioridade[str(dash.somardata(date, 0))])
-        prioridadedate2 = list(prioridade[str(dash.somardata(date, 1))])
-        prioridadedate3 = list(prioridade[str(dash.somardata(date, 2))])
-        prioridadedate4 = list(prioridade[str(dash.somardata(date, 3))])
-        prioridadedate5 = list(prioridade[str(dash.somardata(date, 4))])
-        prioridadedate6 = list(prioridade[str(dash.somardata(date, 5))])
-        prioridadedate7 = list(prioridade[str(dash.somardata(date, 6))])
-        prioridadedate8 = list(prioridade[str(dash.somardata(date, 7))])
-        prioridadedate9 = list(prioridade[str(dash.somardata(date, 8))])
-        prioridadedate10 = list(prioridade[str(dash.somardata(date, 9))])
-        escala = dash.tratarfiltrarescala(date, região, bu)
-        escalaheading = list(escala)
-        escalaregião = list(escala['região']) 
-        escalahub = list(escala['hub'])
-        escalaescala = list(escala['escala'])
-        escaladata = list(escala['data'].astype(str))
-        escalaid_técnica = list(escala['id_técnica'])
-        escalatécnica = list(escala['técnica'])
-        escalahrentrada = list(escala['hr_entrada'])
-        escalahrsaída = list(escala['hr_saída'])
-        escalaárea = list(escala['área'])
-        escalabu = list(escala['bu'])
-        escalastatus = list(escala['status'])
-        return  render_template("index.html", prioridadeheading=prioridadeheading, prioridaderegião=prioridaderegião, prioridadeárea=prioridadeárea, prioridadehub=prioridadehub, 
-        prioridadedate1=prioridadedate1, prioridadedate2=prioridadedate2, prioridadedate3=prioridadedate3, prioridadedate4=prioridadedate4, prioridadedate5=prioridadedate5,
-        prioridadedate6=prioridadedate6, prioridadedate7=prioridadedate7, prioridadedate8=prioridadedate8, prioridadedate9=prioridadedate9, prioridadedate10=prioridadedate10,
-        escalaheading=escalaheading, escalaregião=escalaregião, escalahub=escalahub, escalaescala=escalaescala, escaladata=escaladata, escalaid_técnica=escalaid_técnica, 
-        escalatécnica=escalatécnica, escalahrentrada=escalahrentrada, escalahrsaída=escalahrsaída, escalaárea=escalaárea, escalabu=escalabu, escalastatus=escalastatus, 
-        regiões = regiões, bus = bus, capacidadeheading=capacidadeheading, capacidadestatus=capacidadestatus, capacidadedate1=capacidadedate1, capacidadedate2=capacidadedate2, 
-        capacidadedate3=capacidadedate3, capacidadedate4=capacidadedate4, capacidadedate5=capacidadedate5, capacidadedate6=capacidadedate6, capacidadedate7=capacidadedate7, 
-        capacidadedate8=capacidadedate8, capacidadedate9=capacidadedate9, capacidadedate10=capacidadedate10)
+    if not date or regiao == "Escolha a região" or bu == "Escolha o produto":
+        return render_template("index.html", regiões= lista_macro_regiao, bus= lista_bu)
+    capacidade = Agenda.retornar_tabela_quantidade_agenda_disponivel_ocupado(date, regiao, bu)
+    capacidade_heading = list(capacidade)
+    capacidade_status = list(capacidade['status'])
+    capacidade_data_d1 = list(capacidade[str(Parametros.retornar_data_somada(date, 0))])
+    capacidade_data_d2 = list(capacidade[str(Parametros.retornar_data_somada(date, 1))])
+    capacidade_data_d3 = list(capacidade[str(Parametros.retornar_data_somada(date, 2))])
+    capacidade_data_d4 = list(capacidade[str(Parametros.retornar_data_somada(date, 3))])
+    capacidade_data_d5 = list(capacidade[str(Parametros.retornar_data_somada(date, 4))])
+    capacidade_data_d6 = list(capacidade[str(Parametros.retornar_data_somada(date, 5))])
+    capacidade_data_d7 = list(capacidade[str(Parametros.retornar_data_somada(date, 6))])
+    capacidade_data_d8 = list(capacidade[str(Parametros.retornar_data_somada(date, 7))])
+    capacidade_data_d9 = list(capacidade[str(Parametros.retornar_data_somada(date, 8))])
+    capacidade_data_d10 = list(capacidade[str(Parametros.retornar_data_somada(date, 9))])
+    prioridade = Area.retorna_tabela_prioridade_score_areas(date, regiao, bu)
+    prioridade_heading = list(prioridade)
+    prioridade_regiao = list(prioridade['região'])
+    prioridade_hub = list(prioridade['hub'])
+    prioridade_area = list(prioridade['área'])
+    prioridade_data_d1 = list(prioridade[str(Parametros.retornar_data_somada(date, 0))])
+    prioridade_data_d2 = list(prioridade[str(Parametros.retornar_data_somada(date, 1))])
+    prioridade_data_d3 = list(prioridade[str(Parametros.retornar_data_somada(date, 2))])
+    prioridade_data_d4 = list(prioridade[str(Parametros.retornar_data_somada(date, 3))])
+    prioridade_data_d5 = list(prioridade[str(Parametros.retornar_data_somada(date, 4))])
+    prioridade_data_d6 = list(prioridade[str(Parametros.retornar_data_somada(date, 5))])
+    prioridade_data_d7 = list(prioridade[str(Parametros.retornar_data_somada(date, 6))])
+    prioridade_data_d8 = list(prioridade[str(Parametros.retornar_data_somada(date, 7))])
+    prioridade_data_d9 = list(prioridade[str(Parametros.retornar_data_somada(date, 8))])
+    prioridade_data_d10 = list(prioridade[str(Parametros.retornar_data_somada(date, 9))])
+    escala = Agenda.retornar_tabela_agendas_regiao(date, regiao, bu)
+    escala_heading = list(escala)
+    escala_regiao = list(escala['região']) 
+    escala_hub = list(escala['hub'])
+    escala_escala = list(escala['escala'])
+    escala_data = list(escala['data'].astype(str))
+    escala_id_tecnica = list(escala['id_técnica'])
+    escala_tecnica = list(escala['técnica'])
+    escala_hora_entrada = list(escala['hr_entrada'])
+    escala_hora_saida = list(escala['hr_saída'])
+    escala_area = list(escala['área'])
+    escala_bu = list(escala['bu'])
+    escala_status = list(escala['status'])
+    return  render_template("index.html", prioridadeheading=prioridade_heading, prioridaderegião=prioridade_regiao, prioridadeárea=prioridade_area, prioridadehub=prioridade_hub, 
+    prioridadedate1=prioridade_data_d1, prioridadedate2=prioridade_data_d2, prioridadedate3=prioridade_data_d3, prioridadedate4=prioridade_data_d4, prioridadedate5=prioridade_data_d5,
+    prioridadedate6=prioridade_data_d6, prioridadedate7=prioridade_data_d7, prioridadedate8=prioridade_data_d8, prioridadedate9=prioridade_data_d9, prioridadedate10=prioridade_data_d10,
+    escalaheading=escala_heading, escalaregião=escala_regiao, escalahub=escala_hub, escalaescala=escala_escala, escaladata=escala_data, escalaid_técnica=escala_id_tecnica, 
+    escalatécnica=escala_tecnica, escalahrentrada=escala_hora_entrada, escalahrsaída=escala_hora_saida, escalaárea=escala_area, escalabu=escala_bu, escalastatus=escala_status, 
+    regiões = lista_macro_regiao, bus = lista_bu, capacidadeheading=capacidade_heading, capacidadestatus=capacidade_status, capacidadedate1=capacidade_data_d1, capacidadedate2=capacidade_data_d2, 
+    capacidadedate3=capacidade_data_d3, capacidadedate4=capacidade_data_d4, capacidadedate5=capacidade_data_d5, capacidadedate6=capacidade_data_d6, capacidadedate7=capacidade_data_d7, 
+    capacidadedate8=capacidade_data_d8, capacidadedate9=capacidade_data_d9, capacidadedate10=capacidade_data_d10)
 
 @app.route("/abrirslots")
 def abrirslots():   
     data = request.args.get('col')
-    área = request.args.get('lin')
-    id_técnica = request.args.get('id_técnica')
-    técnica = request.args.get('técnica')
+    area = request.args.get('lin')
+    id_tecnica = request.args.get('id_técnica')
+    tecnica = request.args.get('técnica')
     produto = request.args.get('produto')
     regime = request.args.get('regime')
-    inicioregime = request.args.get('inicioregime')
-    fimregime = request.args.get('fimregime')
+    inicio_regime = request.args.get('inicioregime')
+    fim_regime = request.args.get('fimregime')
     hub = request.args.get('hub')
-    duração = int(request.args.get('duração'))
-    regime = dash.regime(regime)
-    idparceiro = dash.idparceiro(área)
-    slotatual = inicioregime
+    duracao = int(request.args.get('duração'))
+    regime = Parametros.retornar_regime(regime)
+    id_parceiro = Area.retorna_id_parceiro(area)
     print('próximo de abrir agenda...')
-    abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime)
+    Agenda.registrar_agenda(data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime)
     return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
-def abriragenda(data, produto, idparceiro, área, hub, duração, id_técnica, técnica, regime, slotatual, fimregime):
-    print('Você está abrindo slot na área: ' + área + '.')
-    print(' O ID do parceiro da área é: ' + idparceiro + '.')
-    slotatual = str(slotatual)
-    slotatual = datetime.strptime(slotatual, "%H:%M:%S")
-    fimregime = str(fimregime)
-    quantidadeslots = 0
-    slotsdaagenda = []
-    if (regime == 'rotating') or (regime == 'diarist' and datetime.strptime(fimregime, "%H:%M:%S") > datetime.strptime("14:00:00", "%H:%M:%S")): 
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração+30, seconds=0)):
-            slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
-            if slotatual >= datetime.strptime('11:30:00', "%H:%M:%S") and slotatual < datetime.strptime('13:00:00', "%H:%M:%S"):
-                slotatual = datetime.strptime('13:00:00', "%H:%M:%S")
-            slotatualtexto = slotatual.strftime('%H:%M:%S')
-            if slotatualtexto != "19:00:00":
-                print('Registrando slot ' + slotatualtexto + '...')
-                slotsdaagenda.append({"time": slotatualtexto, "supplier_id": idparceiro, "duration": duração})
-                quantidadeslots = quantidadeslots + 1
+# @app.route("/abrirslotsminimos", methods=["GET","POST"])
+# def abrirslotsminimos():
+#     hub = request.args.get('hub') 
+#     bu = request.args.get('bu')
+#     duração = int(request.args.get('duração'))
+#     classificação_min = int(request.args.get('classificação_min'))
+#     classificação_max = int(request.args.get('classificação_max'))
+#     verificação_range_dias = int(request.args.get('verificação_range_dias'))
+#     aberturaautomatica(f'{hub}', f'{bu}', 60, verificação_range_dias, classificação_min, classificação_max, duração)
+#     return 'Agendas abertas com sucesso.'
 
-    elif regime == 'diarist':
-        while(slotatual < datetime.strptime(fimregime, "%H:%M:%S") - timedelta(hours=0, minutes=duração+30, seconds=0)):
-            slotatual = slotatual + timedelta(hours=0, minutes=duração, seconds=0)
-            slotatualtexto = slotatual.strftime('%H:%M:%S')
-            print('Registrando slot ' + slotatualtexto + '...')
-            slotsdaagenda.append({"time": slotatualtexto, "supplier_id": idparceiro, "duration": duração})
-            quantidadeslots = quantidadeslots + 1
-    print('Consultando token...')
-    token = dash.token()
-    agenda.abrirslots(f'{data}', f'{regime}', f'{produto}', idparceiro, token, slotsdaagenda, f'{área}', f'{hub}', id_técnica, técnica)
-    return print('Todos os slots abertos com sucesso!')
-
-@app.route("/abrirslotsminimos", methods=["GET","POST"])
-def abrirslotsminimos():
-    hub = request.args.get('hub') 
-    bu = request.args.get('bu')
-    duração = int(request.args.get('duração'))
-    classificação_min = int(request.args.get('classificação_min'))
-    classificação_max = int(request.args.get('classificação_max'))
-    verificação_range_dias = int(request.args.get('verificação_range_dias'))
-    aberturaautomatica(f'{hub}', f'{bu}', 60, verificação_range_dias, classificação_min, classificação_max, duração)
-    return 'Agendas abertas com sucesso.'
-
-@app.route("/abrirslotssobdemanda", methods=["GET","POST"])
-def abrirslotssobdemanda():
-    hub = request.args.get('hub')
-    bu = request.args.get('bu')
-    duração = int(request.args.get('duração'))
-    dias = int(request.args.get('dias'))
-    ocupação = float(request.args.get('ocupação'))
-    removerduplicado = int(request.args.get('removerduplicado'))
-    aberturaautomaticasobdemanda(f'{hub}', f'{bu}', dias, ocupação, duração, removerduplicado)
-    return 'Agendas abertas com sucesso.'
-
-
-def aberturaautomatica(hub, bu, dias, rangedias, estrelasmin, estrelasmax, duração):
-    while dias > 12:
-        current_date = date.today()
-        eixoárea = 0
-        diaabertura = current_date + timedelta(dias)
-        rangediasfinal = diaabertura + timedelta(rangedias)
-        área = dash.áreasabertura(hub, bu, estrelasmin, estrelasmax)
-        linhasárea = len(área)
-        escala = dash.escalaautomatica(diaabertura, hub, bu, diaabertura)
-        linhasescala = len(escala)
-        print('Verificando o dia ' + str(diaabertura) + ' ...')
-        if linhasescala == 0: 
-            linhasárea = 0 
-            print('Não temos técnica disponível para trabalhar nesse dia.')
-        else: 
-            while linhasárea > eixoárea:
-                escala = dash.escalaautomatica(diaabertura, hub, bu, rangediasfinal)
-                disponibilidadeescala = escala[(escala['área'] == área.iloc[eixoárea]['área'])]
-                escala = dash.escalaautomatica(diaabertura, hub, bu, diaabertura)
-                técnicadisponível = len(escala[escala['status'] == 'Disponível'])
-                if len(disponibilidadeescala) >= 1:
-                    print('A área ' + área.iloc[eixoárea]['área'] + ' já está aberta no range de dias solicitado.')
-                    eixoárea = eixoárea + 1
-                elif técnicadisponível == 0:
-                    print('Não temos técnica disponível para trabalhar nesse dia na ' + área.iloc[eixoárea]['área'] + '.')
-                    linhasárea = 0
-                else:
-                    escalafiltro = escala[(escala['status'] == 'Disponível')]
-                    abriragenda(escalafiltro.iloc[0]['data'], bu, área.iloc[eixoárea]['id_parceiro'], área.iloc[eixoárea]['área'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
-                    print('Slots na ' + área.iloc[eixoárea]['área'] + ' abertos com sucesso!')
-                    eixoárea = eixoárea + 1
-        dias = dias - rangedias
-    return(print('Dia ' + str(diaabertura) + ' verificado.'))
-
-def aberturaautomaticasobdemanda(hub, bu, dias, taxaocupacao, duração, removerduplicado):
-    current_date = date.today()
-    diaabertura = current_date + timedelta(dias)
-    tabelaareastaxadeocupacao = dash.filtrartaxaocupacao(hub, bu, diaabertura, taxaocupacao)
-    if removerduplicado == 1:
-        tabelaareastaxadeocupacao = tabelaareastaxadeocupacao.drop_duplicates(subset='parceiro_nome', keep='first')
-    linhastabelataxadeocupacao = len(tabelaareastaxadeocupacao)
-    print('Verificando dia ' + str(diaabertura) + '...')
-    if linhastabelataxadeocupacao == 0:
-            print('Não temos nenhuma área com a taxa de ocupação maior que ' + str(taxaocupacao))
-    while linhastabelataxadeocupacao > 0:
-        escala = dash.escalaautomatica(diaabertura, hub, bu, diaabertura)
-        escalafiltro = escala[escala['status'] == 'Disponível']
-        quantidadetécnicadisponível = len(escalafiltro)
-        if quantidadetécnicadisponível == 0:
-            print('Não temos técnica disponível para trabalhar nesse dia.')
-            linhastabelataxadeocupacao = 0
-        else:
-            abriragenda(tabelaareastaxadeocupacao.iloc[linhastabelataxadeocupacao - 1]['slot_date'], bu, str(tabelaareastaxadeocupacao.iloc[linhastabelataxadeocupacao - 1]['ID Área']), tabelaareastaxadeocupacao.iloc[linhastabelataxadeocupacao - 1]['parceiro_nome'], hub, duração, escalafiltro.iloc[0]['id_técnica'], escalafiltro.iloc[0]['técnica'], dash.regime(escalafiltro.iloc[0]['escala']), escalafiltro.iloc[0]['hr_entrada'], escalafiltro.iloc[0]['hr_saída'])
-            print('Slots na ' + tabelaareastaxadeocupacao.iloc[linhastabelataxadeocupacao - 1]['parceiro_nome'] + ' abertos com sucesso!')
-            linhastabelataxadeocupacao = linhastabelataxadeocupacao - 1
-        return(print('Dia ' + str(diaabertura) + ' verificado.'))
-        
-
+# @app.route("/abrirslotssobdemanda", methods=["GET","POST"])
+# def abrirslotssobdemanda():
+#     hub = request.args.get('hub')
+#     bu = request.args.get('bu')
+#     duração = int(request.args.get('duração'))
+#     dias = int(request.args.get('dias'))
+#     ocupação = float(request.args.get('ocupação'))
+#     removerduplicado = int(request.args.get('removerduplicado'))
+#     aberturaautomaticasobdemanda(f'{hub}', f'{bu}', dias, ocupação, duração, removerduplicado)
+#     return 'Agendas abertas com sucesso.'
 
 if __name__ == "__main__":
     app.run(debug= True)
