@@ -1,12 +1,12 @@
 from sqlite3 import Timestamp
-from sqlalchemy import Time, create_engine, sqlalchemy
+from sqlalchemy import Time, create_engine
 import pandas as pd
 import os
 
 # teste = requests.delete(url='https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings/73361?session_token=fd5d8958073e6d5a51c83cd92df32b8b07d22b92')
 # print(teste)
 
-class Banco_de_dados(): 
+class Banco_de_dados():  
     def __init__(self):
         usuario =  os.environ['usuario']
         senha =  os.environ['senha']
@@ -16,8 +16,8 @@ class Banco_de_dados():
         sp_senha =  os.environ['sp_senha']
         sp_servidor =  os.environ['sp_servidor']
         sp_banco =  os.environ['sp_banco']
-        self.bi = sqlalchemy.create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        self.tech = sqlalchemy.create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+        self.bi = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        self.tech = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
 
     def consulta(self, servidor, consulta):
         if servidor == 'tech':
