@@ -6,7 +6,7 @@ import os
 # teste = requests.delete(url='https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings/73361?session_token=fd5d8958073e6d5a51c83cd92df32b8b07d22b92')
 # print(teste)
 
-class Banco_de_dados():
+class Banco_de_dados(): 
     def __init__(self):
         usuario =  os.environ['usuario']
         senha =  os.environ['senha']
