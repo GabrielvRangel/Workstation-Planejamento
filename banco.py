@@ -1,5 +1,6 @@
 from sqlite3 import Timestamp
-from sqlalchemy import Time, create_engine, sqlalchemy
+from sqlalchemy import Time, create_engine
+import sqlalchemy
 import pandas as pd
 import os
 
