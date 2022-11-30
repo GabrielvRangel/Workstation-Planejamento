@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timedelta, date
 import banco
 import parametros
+import math
 
 Parametros = parametros.Parametros_internos()
 Banco_de_dados = banco.Banco_de_dados()
@@ -106,12 +107,13 @@ class Agenda():
         and ((jeeo.data_inicio_previsto::time >= '06:00'
         and jeeo.data_inicio_previsto::time <= '14:00'
         and jeeo.data_fim_previsto::time >= '10:00'
-        and jeeo.data_fim_previsto::time <= '19:00') 
+        and jeeo.data_fim_previsto::time <= '20:00') 
         or (jeeo.data_inicio_lancamento::time >= '06:00'
         and jeeo.data_inicio_lancamento::time <= '14:00'
         and jeeo.data_fim_lancamento::time >= '10:00'
-        and jeeo.data_fim_lancamento::time <= '19:00'))
+        and jeeo.data_fim_lancamento::time <= '20:00'))
         """
+        self.quantidade_tecnicas_para_uma_contingencia = 10
 
     def retornar_tabela_agendas_regiao(self, data_min, regiao, bu):
         bu = Parametros.retornar_bu(bu, 'escala app')
@@ -138,6 +140,30 @@ class Agenda():
         """        
         tabela_agendas_regiao = Banco_de_dados.consulta('bi', consultar_agendas_regiao)
         return tabela_agendas_regiao
+
+    def retornar_tabela_hibridas_regiao(self, data, regiao):
+        consultar_hibridas_regiao = f"""
+        select macro_região as região, jeeo.hub, jeeo.escala, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica, 
+        case when jeeo."lancamento" is null then jeeo.data_inicio_previsto::time else jeeo.data_inicio_lancamento::time end as hr_entrada, 
+        case when jeeo."lancamento" is null then jeeo.data_fim_previsto::time else jeeo.data_fim_lancamento::time end as hr_saída, 
+        wsa."area" as área,
+        (case when jeeo.escala LIKE '%VAC%' then 'vaccines' when jeeo.escala LIKE '%LAB%' then 'laboratories' else 'híbrida' end) as bu,
+        (case when wsa.tecnica is not null then 'Ocupado' else 'Disponível' end) as status
+        from jornadas_escala.escala_operacional jeeo
+        left join workstation.slots_abertos wsa
+        on concat(wsa.data::text, wsa.id_tecnica::text) = concat(jeeo.data::text, jeeo.id_colaborador::text) 
+        left join dim_parceiros
+        on "HUB" = jeeo.hub
+        where escala LIKE '%Técnica%'
+        and {self.filtro_status_lancamento_escala_app}
+        and macro_região = '{regiao}'
+        and jeeo.data = '{data}'
+        and jeeo.id_cargo = '18394'
+        group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area", jeeo."lancamento", jeeo.data_inicio_lancamento, jeeo.data_fim_lancamento
+        order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador
+        """        
+        tabela_hibridas_regiao = Banco_de_dados.consulta('bi', consultar_hibridas_regiao)
+        return tabela_hibridas_regiao
 
     def retornar_tabela_agendas_hub(self, hub, bu, data_min, data_max):
         bu = Parametros.retornar_bu(bu, 'escala app')
@@ -191,6 +217,35 @@ class Agenda():
         tabela_quantidade_agenda_disponivel_ocupado = tabela_quantidade_agenda_disponivel_ocupado_pivotada.set_axis(tabela_quantidade_agenda_disponivel_ocupado_pivotada.columns.tolist(), axis=1).reset_index()
         tabela_quantidade_agenda_disponivel_ocupado.columns = ['status', str(Parametros.retornar_data_somada(data, 0)), str(Parametros.retornar_data_somada(data, 1)), str(Parametros.retornar_data_somada(data, 2)), str(Parametros.retornar_data_somada(data, 3)), str(Parametros.retornar_data_somada(data, 4)), str(Parametros.retornar_data_somada(data, 5)), str(Parametros.retornar_data_somada(data, 6)), str(Parametros.retornar_data_somada(data, 7)), str(Parametros.retornar_data_somada(data, 8)), str(Parametros.retornar_data_somada(data, 9))] 
         return tabela_quantidade_agenda_disponivel_ocupado
+    
+    def retornar_quantidade_total_agendas_macro_regiao(self, data, região):
+        consulta_tabela_quantidade_total_agendas_macro_regiao = f"""   
+        select sum(case a.dataincompleta = data::date when true then 1 else 0 end) as quant from (
+        select to_char(DATE '{data}', 'YYYY/MM/DD')::date as data, macro_região as região, jeeo.data as dataincompleta, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica
+        from jornadas_escala.escala_operacional jeeo
+        left join workstation.slots_abertos wsa
+        on concat(wsa.data::text, wsa.id_tecnica::text) = concat(jeeo.data::text, jeeo.id_colaborador::text) 
+        left join dim_parceiros
+        on "HUB" = jeeo.hub
+        where escala LIKE '%Técnica%'
+        and macro_região = '{região}'
+        and {self.filtro_status_lancamento_escala_app}
+        and jeeo.data = '{data}'
+        group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area") a 
+        group by a.data
+        """
+        tabela_quantidade_agenda_disponivel_ocupado = Banco_de_dados.consulta('bi', consulta_tabela_quantidade_total_agendas_macro_regiao)
+        quantidade_agenda_disponivel_ocupado = tabela_quantidade_agenda_disponivel_ocupado.iloc[0]['quant']
+        return quantidade_agenda_disponivel_ocupado
+
+    def retornar_quantidade_contingencia(self, data, macro_regiao):
+        quantidade_agendas_macro_regiao = Agenda().retornar_quantidade_total_agendas_macro_regiao(data, macro_regiao)     
+        quantidade_contingencia = math.floor(float(quantidade_agendas_macro_regiao)/self.quantidade_tecnicas_para_uma_contingencia)
+        return quantidade_contingencia
+
+    def retornar_nome_agenda_contingencia(self, data, macro_regiao, bu):
+        quantidade_contingencia = Agenda().retornar_quantidade_contingencia(data, macro_regiao)
+        Agenda().retornar_tabela_agendas_regiao(data, macro_regiao, bu)
 
     def registrar_agenda(self, data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime):
         print('Você está abrindo slot no hub ' + hub + ' dentro da área: ' + area + '.')
@@ -363,3 +418,6 @@ class Dashboard():
 # area = Area()
 # teste = area.retornar_tabela_classificação_areas('Recife', 'vaccines')
 # print(area.remover_areas_nao_utilizadas(teste, 0, 6))
+
+agenda = Agenda()
+print(agenda.retornar_quantidade_contingencia('2022-11-30', 'Rio de Janeiro'))

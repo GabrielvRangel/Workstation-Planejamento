@@ -14,7 +14,8 @@ Slots.abertura_sob_demanda_automatica('São Cristóvão', 'vaccines', 6, 0, 40, 
 Slots.abertura_sob_demanda_automatica('São Cristóvão', 'vaccines', 5, 0, 40, 0)
 Slots.abertura_sob_demanda_automatica('São Cristóvão', 'vaccines', 4, 0, 40, 0)
 Slots.abertura_sob_demanda_automatica('São Cristóvão', 'vaccines', 3, 0, 40, 0)
-
+Slots.abertura_sob_demanda_automatica('São Cristóvão', 'vaccines', 2, 0, 40, 0)
+Slots.abertura_sob_demanda_automatica('São Cristóvão', 'vaccines', 1, 0, 40, 0)
 
 Slots.abertura_minima_automatica('São Cristóvão', 'laboratories', 60, 15, 0, 2, 40)
 Slots.abertura_minima_automatica('São Cristóvão', 'laboratories', 60, 6, 3, 4, 30)
@@ -26,6 +27,8 @@ Slots.abertura_sob_demanda_automatica('São Cristóvão', 'laboratories', 6, 0, 
 Slots.abertura_sob_demanda_automatica('São Cristóvão', 'laboratories', 5, 0, 30, 0)
 Slots.abertura_sob_demanda_automatica('São Cristóvão', 'laboratories', 4, 0, 30, 0)
 Slots.abertura_sob_demanda_automatica('São Cristóvão', 'laboratories', 3, 0, 30, 0)
+Slots.abertura_sob_demanda_automatica('São Cristóvão', 'laboratories', 2, 0, 30, 0)
+Slots.abertura_sob_demanda_automatica('São Cristóvão', 'laboratories', 1, 0, 30, 0)
 
 Slots.abertura_minima_automatica('Barra', 'vaccines', 60, 15, 0, 2, 40)
 Slots.abertura_minima_automatica('Barra', 'vaccines', 60, 6, 3, 4, 40)
@@ -37,6 +40,8 @@ Slots.abertura_sob_demanda_automatica('Barra', 'vaccines', 6, 0, 40, 0)
 Slots.abertura_sob_demanda_automatica('Barra', 'vaccines', 5, 0, 40, 0)
 Slots.abertura_sob_demanda_automatica('Barra', 'vaccines', 4, 0, 40, 0)
 Slots.abertura_sob_demanda_automatica('Barra', 'vaccines', 3, 0, 40, 0)
+Slots.abertura_sob_demanda_automatica('Barra', 'vaccines', 2, 0, 40, 0)
+Slots.abertura_sob_demanda_automatica('Barra', 'vaccines', 1, 0, 40, 0)
 
 Slots.abertura_minima_automatica('Barra', 'laboratories', 60, 15, 0, 2, 40)
 Slots.abertura_minima_automatica('Barra', 'laboratories', 60, 6, 3, 4, 30)
@@ -48,6 +53,8 @@ Slots.abertura_sob_demanda_automatica('Barra', 'laboratories', 6, 0, 30, 0)
 Slots.abertura_sob_demanda_automatica('Barra', 'laboratories', 5, 0, 30, 0)
 Slots.abertura_sob_demanda_automatica('Barra', 'laboratories', 4, 0, 30, 0)
 Slots.abertura_sob_demanda_automatica('Barra', 'laboratories', 3, 0, 30, 0)
+Slots.abertura_sob_demanda_automatica('Barra', 'laboratories', 2, 0, 30, 0)
+Slots.abertura_sob_demanda_automatica('Barra', 'laboratories', 1, 0, 30, 0)
 
 Slots.abertura_minima_automatica('Cabo Frio', 'vaccines', 60, 15, 0, 2, 50)
 Slots.abertura_minima_automatica('Cabo Frio', 'vaccines', 60, 6, 3, 4, 50)
@@ -59,4 +66,6 @@ Slots.abertura_sob_demanda_automatica('Cabo Frio', 'vaccines', 6, 0, 50, 0)
 Slots.abertura_sob_demanda_automatica('Cabo Frio', 'vaccines', 5, 0, 50, 0)
 Slots.abertura_sob_demanda_automatica('Cabo Frio', 'vaccines', 4, 0, 50, 0)
 Slots.abertura_sob_demanda_automatica('Cabo Frio', 'vaccines', 3, 0, 50, 0)
+Slots.abertura_sob_demanda_automatica('Cabo Frio', 'vaccines', 2, 0, 50, 0)
+Slots.abertura_sob_demanda_automatica('Cabo Frio', 'vaccines', 1, 0, 50, 0)
 

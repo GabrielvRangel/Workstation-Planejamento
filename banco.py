@@ -8,16 +8,18 @@ import os
 
 class Banco_de_dados():  
     def __init__(self):
-        usuario =  os.environ['usuario']
-        senha =  os.environ['senha']
-        servidor =  os.environ['servidor']
-        banco =  os.environ['banco']
-        sp_usuario =  os.environ['sp_usuario']
-        sp_senha =  os.environ['sp_senha']
-        sp_servidor =  os.environ['sp_servidor']
-        sp_banco =  os.environ['sp_banco']
-        self.bi = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
-        self.tech = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+        # usuario =  os.environ['usuario']
+        # senha =  os.environ['senha']
+        # servidor =  os.environ['servidor']
+        # banco =  os.environ['banco']
+        # sp_usuario =  os.environ['sp_usuario']
+        # sp_senha =  os.environ['sp_senha']
+        # sp_servidor =  os.environ['sp_servidor']
+        # sp_banco =  os.environ['sp_banco']
+        # self.bi = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
+        # self.tech = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
+        self.bi = create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""")
+        self.tech = create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""")
 
     def consulta(self, servidor, consulta):
         if servidor == 'tech':
