@@ -18,6 +18,3 @@ class Parametros_internos():
     def retornar_data_somada(self, data, dias):
         soma = datetime.datetime.strptime(data, '%Y-%m-%d') + datetime.timedelta(days=dias)
         return soma.strftime("%Y-%m-%d")
-
-
-print('teste')
