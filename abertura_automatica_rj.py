@@ -2,8 +2,6 @@ import model
 
 Slots = model.Slots()
 
-
-
 Slots.abertura_minima_automatica('São Cristóvão', 'vaccines', 60, 15, 0, 2, 40)
 Slots.abertura_minima_automatica('São Cristóvão', 'vaccines', 60, 6, 3, 4, 40)
 Slots.abertura_minima_automatica('São Cristóvão', 'vaccines', 60, 1, 5, 6, 40)
