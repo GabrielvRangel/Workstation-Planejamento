@@ -43,12 +43,19 @@ class Slots():
             tabela_classificacao_areas = Area().remover_areas_nao_utilizadas(tabela_classificacao_areas, classificacao_minima, classificacao_maxima)
             quantidade_linhas_tabela_classificacao_areas = len(tabela_classificacao_areas)
             print('Verificando o dia ' + str(dia_abertura_slot) + ' ...')
+            maximo_areas_permitido_abrir_no_mesmo_dia = 1000
+            if classificacao_maxima <= 2:
+                maximo_areas_permitido_abrir_no_mesmo_dia = 2
             while quantidade_linhas_tabela_classificacao_areas > eixo_tabela_area:
                 permissao_abrir_slots = 1
                 tabela_agendas_hub = Agenda().retornar_tabela_agendas_hub(hub, bu, range_dia_inicial_abertura_slot, dia_abertura_slot)
                 tabela_tecnicas_disponiveis_dia_abertura = Agenda().retornar_tabela_agendas_hub(hub, bu, dia_abertura_slot, dia_abertura_slot)
                 tecnicas_disponiveis_dia_abertura = tabela_tecnicas_disponiveis_dia_abertura[tabela_tecnicas_disponiveis_dia_abertura['status'] == 'Disponível']
                 filtrando_area_atual_da_tabela_agendas_hub = tabela_agendas_hub[(tabela_agendas_hub['área'] == tabela_classificacao_areas.iloc[eixo_tabela_area]['área'])]
+                if maximo_areas_permitido_abrir_no_mesmo_dia == 0:
+                    quantidade_linhas_tabela_classificacao_areas = 0
+                    permissao_abrir_slots = 0
+                    print('Limite de abertura na quantidade de áreas classificação até 2 atingido.')
                 if len(tecnicas_disponiveis_dia_abertura) == 0: 
                     quantidade_linhas_tabela_classificacao_areas = 0 
                     permissao_abrir_slots = 0
@@ -91,6 +98,13 @@ class Slots():
                 quantidade_linhas_tabela_taxa_ocupacao_score = quantidade_linhas_tabela_taxa_ocupacao_score - 1
             return(print('Dia ' + str(dia_abertura_slot) + ' verificado.'))
 
+    def fechar_slots(self, id_agenda, token, id_tecnica, nome_tecnica, hub, data):
+        print('Fechando slots...')
+        url = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings/{id_agenda}?session_token={token}'
+        requests.delete(url)
+        Banco_de_dados.remover_dados(id_tecnica, hub, data)
+        return print('Todos os slots da tecnica ' + str(nome_tecnica) + ' foram fechados com sucesso!')
+
     def retornar_token(self):
         consulta_tabela_token = f"""
         select remember_token from users where username = 'gabriel.rangel@beepsaude.com.br'
@@ -102,18 +116,151 @@ class Slots():
 
 class Agenda():
     def __init__(self):
-        self.filtro_status_lancamento_escala_app = """((previsto = 'Trabalho' or previsto = 'Afastamento INSS' or previsto = 'Descanso' or previsto = 'Férias' or previsto = 'Folga' or previsto = 'Folga extra' or previsto = 'Folga hora' or previsto = 'Licença maternidade' 
-        or previsto = 'Licença médica' or previsto = 'Vale folga') and (lancamento = 'Trabalho' or lancamento = 'Hora extra' or lancamento = 'Aleitamento materno' or lancamento = 'Meia folga') or (previsto = 'Trabalho' and lancamento is null))
+        self.filtro_status_lancamento_escala_app = """((previsto in ('Trabalho','Afastamento INSS','Descanso','Férias','Folga','Folga extra','Folga hora','Licença maternidade','Licença médica','Vale folga') and (lancamento in ('Trabalho','Hora extra','Meia folga'))) 
+        or (previsto = 'Trabalho' and lancamento is null) 
+        or (previsto in ('Trabalho','Afastamento INSS','Férias','Folga','Folga extra','Folga hora','Licença maternidade','Licença médica','Vale folga') and (lancamento = 'Aleitamento materno')))
         and ((jeeo.data_inicio_previsto::time >= '06:00'
         and jeeo.data_inicio_previsto::time <= '14:00'
         and jeeo.data_fim_previsto::time >= '10:00'
-        and jeeo.data_fim_previsto::time <= '20:00') 
+        and jeeo.data_fim_previsto::time <= '20:00'
+        and (jeeo.data_fim_previsto::time - jeeo.data_inicio_previsto::time) >= '02:00') 
         or (jeeo.data_inicio_lancamento::time >= '06:00'
         and jeeo.data_inicio_lancamento::time <= '14:00'
         and jeeo.data_fim_lancamento::time >= '10:00'
-        and jeeo.data_fim_lancamento::time <= '20:00'))
+        and jeeo.data_fim_lancamento::time <= '20:00'
+        and (jeeo.data_fim_lancamento::time - jeeo.data_inicio_lancamento::time) >= '02:00' ))
         """
         self.quantidade_tecnicas_para_uma_contingencia = 10
+    
+    def fechar_agendas(self, hub, bu, dias):
+        dia_hoje = date.today()
+        while dias > 0:
+            data = dia_hoje + timedelta(dias)
+            tabela_agendas_escala_app_alterada = Agenda().retornar_tabela_agendas_escala_app(data, hub, bu, 1)
+            quantidade_agendas_escala_app_alterada = len(tabela_agendas_escala_app_alterada)
+            token = Slots().retornar_token()
+            if quantidade_agendas_escala_app_alterada == 0:
+                print('Todas as agendas do dia ' + str(data) + ' estão funcionando corretamente.')
+            while quantidade_agendas_escala_app_alterada > 0:
+                permissao_substituir_tecnica = 0
+                permissao_fechar_slots = 1
+                id_tecnica = tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['id_tecnica']
+                nome_tecnica = tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['tecnica']
+                horario_min = tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['min']
+                horario_max = tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['max']
+                quantidade_slots_vendidos = tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['slots']
+                id_agenda = Agenda().retornar_id_agenda(data, hub, bu, id_tecnica)    
+                print('Analisando a possibilidade de fechar slots da agenda ' + str(nome_tecnica) + '...')
+                if id_agenda == 0:
+                    print('O Id da Agenda não foi localizado na tabela.')
+                    permissao_fechar_slots = 0
+                if (quantidade_slots_vendidos > 0):
+                    permissao_fechar_slots = 0
+                    tabela_agendas_slots_abertos_horario_aproximado = Agenda().retornar_tecnica_horario_aproximado_sem_slots_vendidos(data, id_tecnica, hub, bu, horario_min, horario_max)
+                    if len(tabela_agendas_slots_abertos_horario_aproximado) > 0:
+                        permissao_fechar_slots = 1
+                        permissao_substituir_tecnica = 1
+                        id_tecnica_substituida = id_tecnica
+                        nome_tecnica_substituida = nome_tecnica
+                        id_tecnica = tabela_agendas_slots_abertos_horario_aproximado.iloc[0]['id_tecnica']
+                        nome_tecnica = tabela_agendas_slots_abertos_horario_aproximado.iloc[0]['tecnica']
+                        id_agenda = Agenda().retornar_id_agenda(data, hub, bu, id_tecnica)
+                    if len(tabela_agendas_slots_abertos_horario_aproximado) == 0 and quantidade_slots_vendidos <= 7:
+                        permissao_fechar_slots = 0
+                        lista_vouchers = Agenda().retornar_lista_vouchers_agenda(data, hub, bu, id_tecnica)
+                        print('Solicitando reagendamento...')
+                        mensagem = f"""
+                        <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
+                        <p>Favor reagendar os vouchers: {lista_vouchers}.</p>
+                        <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
+                        """
+                        Banco_de_dados.enviar_email(mensagem, f'Alteração no Atendimento | Vouchers: {lista_vouchers} | {data}')                
+                    if len(tabela_agendas_slots_abertos_horario_aproximado) == 0 and quantidade_slots_vendidos >= 8:
+                        permissao_fechar_slots = 0
+                        print('Solicitando extra...')
+                        mensagem = f"""
+                        <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
+                        <p>Tivemos {quantidade_slots_vendidos} slots já vendidos, favor solicitar uma técnica extra para substituí-la!.</p>
+                        <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
+                        """
+                        Banco_de_dados.enviar_email(mensagem, f'Pedir equipe Extra - {hub} - {bu} - {data}')
+                if tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['slots'] == 0:
+                    permissao_fechar_slots = 1
+                if permissao_fechar_slots == 1:    
+                    Slots().fechar_slots(id_agenda, token, id_tecnica, nome_tecnica, hub, data)
+                if permissao_substituir_tecnica == 1:
+                    Banco_de_dados.atualizar_dados_tecnica(id_tecnica, nome_tecnica, id_tecnica_substituida, nome_tecnica_substituida, data, hub)
+                quantidade_agendas_escala_app_alterada = quantidade_agendas_escala_app_alterada - 1
+            dias = dias - 1
+        return(print('agendas do dia ' + str(data) +' analisadas.'))
+
+    def retornar_lista_vouchers_agenda(self, data, hub, bu, id_tecnica):
+        consultar_vouchers_agenda = f"""
+        select sc.id as voucher from workstation.slots_abertos wsa
+        left join sp_product_schedule_slots sp
+        on wsa.id_slot::text = sp.id::text
+        left join sp_calls sc 
+        on sp.call_product_id::text = sc.service_id::text
+        where wsa.produto = '{bu}'
+        and wsa.hub = '{hub}'
+        and wsa.data = '{data}'
+        and wsa.id_tecnica = '{id_tecnica}'
+        and sc.service_id is not null
+        """
+        tabela_vouchers_agenda = Banco_de_dados.consulta('bi', consultar_vouchers_agenda)
+        lista_vouchers_agenda = list(tabela_vouchers_agenda['voucher'])
+        return lista_vouchers_agenda
+
+    def retornar_id_agenda(self, data, hub, bu, id_tecnica):
+        id_agenda = 0
+        consultar_id_agenda = f"""
+        select sp.schedule_booking_id as id_agenda from workstation.slots_abertos wsa
+        left join sp_product_schedule_slots sp
+        on wsa.id_slot::text = sp.id::text
+        where wsa.produto = '{bu}'
+        and wsa.hub = '{hub}'
+        and wsa.data = '{data}'
+        and wsa.id_tecnica = '{id_tecnica}'
+        group by sp.schedule_booking_id
+        """
+        tabela_id_agenda = Banco_de_dados.consulta('bi', consultar_id_agenda)
+        if len(tabela_id_agenda) > 0:
+            id_agenda = tabela_id_agenda.iloc[0]['id_agenda']
+        return id_agenda
+
+    def retornar_tabela_agendas_escala_app(self, data, hub, bu, alterado):
+        consultar_agendas_workstation = f"""
+        select wsa.tecnica, wsa.id_tecnica, wsa.hub, wsa.area, wsa.regime, min(wsa.horario::time), max(wsa.horario::time), wsa.data, count(call_product_id) as slots from workstation.slots_abertos wsa
+        left join sp_product_schedule_slots sp
+        on wsa.id_slot::text = sp.id::text
+        where wsa.produto = '{bu}'
+        and wsa.hub = '{hub}'
+        and wsa.data = '{data}'
+        group by wsa.tecnica, wsa.id_tecnica, wsa.hub, wsa.area, wsa.regime, wsa.data
+        """
+        bu = Parametros.retornar_bu(bu, 'escala app')
+        consultar_agendas_escala_app = f"""
+        select colaborador, id_colaborador, hub, data
+        from jornadas_escala.escala_operacional jeeo
+        where jeeo.escala like '%Técnica%' 
+        and jeeo.escala like '{bu}'
+        and jeeo.hub = '{hub}'
+        and jeeo.data = '{data}'
+        and {self.filtro_status_lancamento_escala_app}
+        """
+        tabela_agendas_workstation = Banco_de_dados.consulta('bi', consultar_agendas_workstation)
+        if alterado == 1:
+            tabela_agendas_escala_app = Banco_de_dados.consulta('bi', consultar_agendas_escala_app)
+            lista_tecnicas_escala_app = list(tabela_agendas_escala_app['colaborador'])
+            tabela_agendas_workstation = tabela_agendas_workstation[~tabela_agendas_workstation['tecnica'].isin(lista_tecnicas_escala_app)]
+        return tabela_agendas_workstation
+    
+    def retornar_tecnica_horario_aproximado_sem_slots_vendidos(self, data, id_tecnica, hub, bu, horario_min, horario_max):
+        tabela_agendas_slots_abertos = Agenda().retornar_tabela_agendas_escala_app(data, hub, bu, 0)
+        tabela_agendas_slots_abertos_horario_aproximado = tabela_agendas_slots_abertos[(tabela_agendas_slots_abertos['min'] == horario_min) &( tabela_agendas_slots_abertos['max'] == horario_max)]
+        tabela_agendas_slots_abertos_horario_aproximado = tabela_agendas_slots_abertos_horario_aproximado[tabela_agendas_slots_abertos_horario_aproximado['slots'] == 0]
+        print('Encontrado ' + str(len(tabela_agendas_slots_abertos_horario_aproximado)) + ' técnicas com 0 slots.')
+        return tabela_agendas_slots_abertos_horario_aproximado
 
     def retornar_tabela_agendas_regiao(self, data_min, regiao, bu):
         bu = Parametros.retornar_bu(bu, 'escala app')
@@ -141,8 +288,8 @@ class Agenda():
         tabela_agendas_regiao = Banco_de_dados.consulta('bi', consultar_agendas_regiao)
         return tabela_agendas_regiao
 
-    def retornar_tabela_hibridas_regiao(self, data, regiao):
-        consultar_hibridas_regiao = f"""
+    def retornar_tabela_hibridas_hub(self, data, hub):
+        consultar_hibridas_hub = f"""
         select macro_região as região, jeeo.hub, jeeo.escala, jeeo.data, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica, 
         case when jeeo."lancamento" is null then jeeo.data_inicio_previsto::time else jeeo.data_inicio_lancamento::time end as hr_entrada, 
         case when jeeo."lancamento" is null then jeeo.data_fim_previsto::time else jeeo.data_fim_lancamento::time end as hr_saída, 
@@ -156,14 +303,14 @@ class Agenda():
         on "HUB" = jeeo.hub
         where escala LIKE '%Técnica%'
         and {self.filtro_status_lancamento_escala_app}
-        and macro_região = '{regiao}'
+        and jeeo.hub = '{hub}'
         and jeeo.data = '{data}'
         and jeeo.id_cargo = '18394'
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area", jeeo."lancamento", jeeo.data_inicio_lancamento, jeeo.data_fim_lancamento
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador
         """        
-        tabela_hibridas_regiao = Banco_de_dados.consulta('bi', consultar_hibridas_regiao)
-        return tabela_hibridas_regiao
+        tabela_hibridas_hub = Banco_de_dados.consulta('bi', consultar_hibridas_hub)
+        return tabela_hibridas_hub
 
     def retornar_tabela_agendas_hub(self, hub, bu, data_min, data_max):
         bu = Parametros.retornar_bu(bu, 'escala app')
@@ -189,7 +336,10 @@ class Agenda():
         order by status, jeeo.data::date, jeeo.hub, jeeo.colaborador
         """
         tabela_agendas_hub = Banco_de_dados.consulta('bi', consultar_agenda_hub)
-        return tabela_agendas_hub
+        contingencia = Agenda().retornar_nome_agenda_contingencia(data_max, hub)
+        lista_contingencia = list(contingencia['técnica'])
+        tabela_agendas_hub_sem_contingencia = tabela_agendas_hub[~tabela_agendas_hub['técnica'].isin(lista_contingencia)]
+        return tabela_agendas_hub_sem_contingencia
 
     def retornar_tabela_quantidade_agenda_disponivel_ocupado(self, data, região, bu):
         bu = Parametros.retornar_bu(bu, 'escala app')
@@ -218,8 +368,8 @@ class Agenda():
         tabela_quantidade_agenda_disponivel_ocupado.columns = ['status', str(Parametros.retornar_data_somada(data, 0)), str(Parametros.retornar_data_somada(data, 1)), str(Parametros.retornar_data_somada(data, 2)), str(Parametros.retornar_data_somada(data, 3)), str(Parametros.retornar_data_somada(data, 4)), str(Parametros.retornar_data_somada(data, 5)), str(Parametros.retornar_data_somada(data, 6)), str(Parametros.retornar_data_somada(data, 7)), str(Parametros.retornar_data_somada(data, 8)), str(Parametros.retornar_data_somada(data, 9))] 
         return tabela_quantidade_agenda_disponivel_ocupado
     
-    def retornar_quantidade_total_agendas_macro_regiao(self, data, região):
-        consulta_tabela_quantidade_total_agendas_macro_regiao = f"""   
+    def retornar_quantidade_total_agendas_hub(self, data, hub):
+        consulta_tabela_quantidade_total_agendas_hub = f"""   
         select sum(case a.dataincompleta = data::date when true then 1 else 0 end) as quant from (
         select to_char(DATE '{data}', 'YYYY/MM/DD')::date as data, macro_região as região, jeeo.data as dataincompleta, jeeo.id_colaborador as id_técnica, jeeo.colaborador as técnica
         from jornadas_escala.escala_operacional jeeo
@@ -228,24 +378,29 @@ class Agenda():
         left join dim_parceiros
         on "HUB" = jeeo.hub
         where escala LIKE '%Técnica%'
-        and macro_região = '{região}'
+        and jeeo.hub = '{hub}'
         and {self.filtro_status_lancamento_escala_app}
         and jeeo.data = '{data}'
         group by  macro_região, jeeo.hub, jeeo.escala, jeeo.data::date, jeeo.id_colaborador, jeeo.colaborador, jeeo.id_cargo, jeeo.data_inicio_previsto, jeeo.data_fim_previsto, wsa.tecnica, wsa."area") a 
         group by a.data
         """
-        tabela_quantidade_agenda_disponivel_ocupado = Banco_de_dados.consulta('bi', consulta_tabela_quantidade_total_agendas_macro_regiao)
-        quantidade_agenda_disponivel_ocupado = tabela_quantidade_agenda_disponivel_ocupado.iloc[0]['quant']
+        tabela_quantidade_agenda_disponivel_ocupado = Banco_de_dados.consulta('bi', consulta_tabela_quantidade_total_agendas_hub)
+        if len(tabela_quantidade_agenda_disponivel_ocupado) == 0:
+            quantidade_agenda_disponivel_ocupado = 0
+        if len(tabela_quantidade_agenda_disponivel_ocupado) > 0:
+            quantidade_agenda_disponivel_ocupado = tabela_quantidade_agenda_disponivel_ocupado.iloc[0]['quant']
         return quantidade_agenda_disponivel_ocupado
 
-    def retornar_quantidade_contingencia(self, data, macro_regiao):
-        quantidade_agendas_macro_regiao = Agenda().retornar_quantidade_total_agendas_macro_regiao(data, macro_regiao)     
-        quantidade_contingencia = math.floor(float(quantidade_agendas_macro_regiao)/self.quantidade_tecnicas_para_uma_contingencia)
+    def retornar_quantidade_contingencia(self, data, hub):
+        quantidade_agendas_hub = Agenda().retornar_quantidade_total_agendas_hub(data, hub)     
+        quantidade_contingencia = math.floor(float(quantidade_agendas_hub)/self.quantidade_tecnicas_para_uma_contingencia)
         return quantidade_contingencia
 
-    def retornar_nome_agenda_contingencia(self, data, macro_regiao, bu):
-        quantidade_contingencia = Agenda().retornar_quantidade_contingencia(data, macro_regiao)
-        Agenda().retornar_tabela_agendas_regiao(data, macro_regiao, bu)
+    def retornar_nome_agenda_contingencia(self, data, hub):
+        quantidade_contingencia = Agenda().retornar_quantidade_contingencia(data, hub)
+        tabela_hibridas_hub = Agenda().retornar_tabela_hibridas_hub(data, hub)
+        nome_agenda_contingencia = tabela_hibridas_hub.head(quantidade_contingencia - 1)
+        return nome_agenda_contingencia
 
     def registrar_agenda(self, data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime):
         print('Você está abrindo slot no hub ' + hub + ' dentro da área: ' + area + '.')
@@ -260,7 +415,7 @@ class Agenda():
         slots_agenda = []
         if (regime == 'diarist'): 
             almoco = 0
-        if (regime == 'rotating') or (regime == 'diarist' and fim_regime_time > datetime.strptime("14:00:00", "%H:%M:%S")): 
+        if (fim_regime_time > datetime.strptime("14:00:00", "%H:%M:%S")): 
             almoco = 1
         while(slot_atual_time < fim_regime_time - timedelta(hours=0, minutes=duracao+30, seconds=0)):
             slot_atual_time = slot_atual_time + timedelta(hours=0, minutes=duracao, seconds=0)
@@ -271,6 +426,7 @@ class Agenda():
                 print('Registrando slot ' + slot_atual_texto + ' dentro do array para abertura...')
                 slots_agenda.append({"time": slot_atual_texto, "supplier_id": id_parceiro, "duration": duracao})
                 quantidade_slots = quantidade_slots + 1
+        print(tecnica)
         print('Consultando token...')
         token = Slots().retornar_token()
         print('Agenda registrada com sucesso.')
@@ -315,8 +471,13 @@ class Area():
                 tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 7] = 1
             if quantidade_areas_id_parceiro_igual_celula_id_sinergia <= 1 and str(tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 0]) == celula_id_sinergia:
                 tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 7] = 1
+            if tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 4] >= 5 and 'Sinergia' not in tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 3]:
+                tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 7] = 1
+            if tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 4] >= 5 and 'Sinergia' in tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 3]:
+               tabela_areas_classificadas.iat[eixo_atual_tabela_areas_classificadas, 7] = 0
             eixo_atual_tabela_areas_classificadas = eixo_atual_tabela_areas_classificadas + 1
-        tabela_areas_classificadas = tabela_areas_classificadas[tabela_areas_classificadas['status abertura'] == 1]
+        remover_duplicado_tabela_areas_classificadas = tabela_areas_classificadas.drop_duplicates(subset='id_parceiro', keep='first')
+        tabela_areas_classificadas = remover_duplicado_tabela_areas_classificadas[remover_duplicado_tabela_areas_classificadas['status abertura'] == 1]
         tabela_areas_classificadas = tabela_areas_classificadas[(tabela_areas_classificadas['classificação'] >= classificacao_inicial) &( tabela_areas_classificadas['classificação'] <= classificacao_final)]
         return tabela_areas_classificadas
 
@@ -416,8 +577,11 @@ class Dashboard():
         return lista_bu
 
 # area = Area()
-# teste = area.retornar_tabela_classificação_areas('Recife', 'vaccines')
-# print(area.remover_areas_nao_utilizadas(teste, 0, 6))
-
-agenda = Agenda()
-print(agenda.retornar_quantidade_contingencia('2022-11-30', 'Rio de Janeiro'))
+# teste = area.retornar_tabela_classificação_areas('São Cristóvão', 'vaccines')
+# print(teste)
+# print(area.remover_areas_nao_utilizadas(teste, 3, 6))
+# agenda = Agenda()
+# print(agenda.retornar_tabela_agendas_alteradas_escala_app('2022-12-08', 'Tatuapé', 'vaccines'))
+# print(agenda.retornar_tabela_agendas_escala_app('2022-12-11','Vila Olímpia','vaccines',1))
+# print(agenda.retornar_tabela_agendas_escala_app('2022-12-19','São Cristóvão','vaccines',0))
+# agenda.fechar_agendas('2022-12-11', 'Vila Olímpia', 'vaccines')
