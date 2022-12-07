@@ -168,13 +168,16 @@ class Agenda():
                     if len(tabela_agendas_slots_abertos_horario_aproximado) == 0 and quantidade_slots_vendidos <= 7:
                         permissao_fechar_slots = 0
                         lista_vouchers = Agenda().retornar_lista_vouchers_agenda(data, hub, bu, id_tecnica)
-                        print('Solicitando reagendamento...')
-                        mensagem = f"""
-                        <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
-                        <p>Favor reagendar os vouchers: {lista_vouchers}.</p>
-                        <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
-                        """
-                        Banco_de_dados.enviar_email(mensagem, f'Alteração no Atendimento | Vouchers: {lista_vouchers} | {data}')                
+                        quantidade_voucher = 0
+                        while quantidade_voucher < len(lista_vouchers):
+                            print('Solicitando reagendamento do voucher: ' + str(lista_vouchers[quantidade_voucher]))
+                            mensagem = f"""
+                            <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
+                            <p>Favor reagendar o voucher: {lista_vouchers[quantidade_voucher]}.</p>
+                            <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
+                            """
+                            Banco_de_dados.enviar_email(mensagem, f'Alteração no Atendimento | Voucher: {lista_vouchers[quantidade_voucher]} | {data} | WS') 
+                            quantidade_voucher = quantidade_voucher + 1           
                     if len(tabela_agendas_slots_abertos_horario_aproximado) == 0 and quantidade_slots_vendidos >= 8:
                         permissao_fechar_slots = 0
                         print('Solicitando extra...')
@@ -413,8 +416,7 @@ class Agenda():
         trava_horario_maximo_abertura_slot = datetime.strptime('19:00:00', "%H:%M:%S")
         quantidade_slots = 0
         slots_agenda = []
-        if (regime == 'diarist'): 
-            almoco = 0
+        almoco = 0
         if (fim_regime_time > datetime.strptime("14:00:00", "%H:%M:%S")): 
             almoco = 1
         while(slot_atual_time < fim_regime_time - timedelta(hours=0, minutes=duracao+30, seconds=0)):
