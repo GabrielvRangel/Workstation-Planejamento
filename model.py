@@ -114,6 +114,31 @@ class Slots():
         token = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={token}'
         return token
 
+class SalesForce():
+    def retornar_pedido_reagendamento_salesforce(self, voucher):
+        consultar_pedido_reagendamento_salesforce = f"""
+        select subject from salesforce.case 
+        where 1=1
+        and subject like '%Alteração no Atendimento |%' 
+        and subject like '% | WS%' 
+        and subject like '%{voucher}%'
+        """
+        tabela_pedido_reagendamento_salesforce = Banco_de_dados.consulta('bi', consultar_pedido_reagendamento_salesforce)
+        return tabela_pedido_reagendamento_salesforce
+
+    def retornar_pedido_extra_salesforce(self, hub, bu, data, nome_tecnica):
+        consultar_pedido_extra_salesforce = f"""
+        select subject from salesforce.case 
+        where 1=1
+        and subject like '%Extra -%' 
+        and subject like '% | WS%' 
+        and subject like '%{hub}%'
+        and subject like '%{bu}%'
+        and subject like '%{data}%'
+        and description like '%{nome_tecnica}%'
+        """
+        tabela_pedido_extra_salesforce = Banco_de_dados.consulta('bi', consultar_pedido_extra_salesforce)
+        return tabela_pedido_extra_salesforce
 class Agenda():
     def __init__(self):
         self.filtro_status_lancamento_escala_app = """((previsto in ('Trabalho','Afastamento INSS','Descanso','Férias','Folga','Folga extra','Folga hora','Licença maternidade','Licença médica','Vale folga') and (lancamento in ('Trabalho','Hora extra','Meia folga'))) 
@@ -131,7 +156,7 @@ class Agenda():
         and (jeeo.data_fim_lancamento::time - jeeo.data_inicio_lancamento::time) >= '02:00' ))
         """
         self.quantidade_tecnicas_para_uma_contingencia = 10
-    
+            
     def fechar_agendas(self, hub, bu, dias):
         dia_hoje = date.today()
         while dias > 0:
@@ -169,24 +194,32 @@ class Agenda():
                         permissao_fechar_slots = 0
                         lista_vouchers = Agenda().retornar_lista_vouchers_agenda(data, hub, bu, id_tecnica)
                         quantidade_voucher = 0
+                        tabela_pedido_reagendamento_salesforce = SalesForce().retornar_pedido_reagendamento_salesforce(str(lista_vouchers[quantidade_voucher]))
                         while quantidade_voucher < len(lista_vouchers):
-                            print('Solicitando reagendamento do voucher: ' + str(lista_vouchers[quantidade_voucher]))
-                            mensagem = f"""
-                            <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
-                            <p>Favor reagendar o voucher: {lista_vouchers[quantidade_voucher]}.</p>
-                            <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
-                            """
-                            Banco_de_dados.enviar_email(mensagem, f'Alteração no Atendimento | Voucher: {lista_vouchers[quantidade_voucher]} | {data} | WS') 
-                            quantidade_voucher = quantidade_voucher + 1           
+                            if len(tabela_pedido_reagendamento_salesforce) > 0:
+                                print('Reagendamento já solicitado')
+                            if len(tabela_pedido_reagendamento_salesforce) == 0:
+                                print('Solicitando reagendamento do voucher: ' + str(lista_vouchers[quantidade_voucher]))
+                                mensagem = f"""
+                                <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
+                                <p>Favor reagendar o voucher: {lista_vouchers[quantidade_voucher]}.</p>
+                                <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
+                                """
+                                Banco_de_dados.enviar_email(mensagem, f'Alteração no Atendimento | Voucher: {lista_vouchers[quantidade_voucher]} | {data} | WS') 
+                                quantidade_voucher = quantidade_voucher + 1           
                     if len(tabela_agendas_slots_abertos_horario_aproximado) == 0 and quantidade_slots_vendidos >= 8:
                         permissao_fechar_slots = 0
-                        print('Solicitando extra...')
-                        mensagem = f"""
-                        <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
-                        <p>Tivemos {quantidade_slots_vendidos} slots já vendidos, favor solicitar uma técnica extra para substituí-la!.</p>
-                        <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
-                        """
-                        Banco_de_dados.enviar_email(mensagem, f'Pedir equipe Extra - {hub} - {bu} - {data}')
+                        tabela_pedido_extra_salesforce = SalesForce().retornar_pedido_extra_salesforce(hub,bu,data,nome_tecnica)
+                        if len(tabela_pedido_extra_salesforce) > 0:
+                            print('Extra já solicitado.')
+                        if len(tabela_pedido_extra_salesforce) == 0:
+                            print('Solicitando extra...')
+                            mensagem = f"""
+                            <p> A Técnica {nome_tecnica} do hub de {hub} e bu {bu} teve um imprevisto e por isso não poderá comparecer no dia {data}. </p>
+                            <p>Tivemos {quantidade_slots_vendidos} slots já vendidos, favor solicitar uma técnica extra para substituí-la!.</p>
+                            <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
+                            """
+                            Banco_de_dados.enviar_email(mensagem, f'Pedir equipe Extra - {hub} - {bu} - {data}')
                 if tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['slots'] == 0:
                     permissao_fechar_slots = 1
                 if permissao_fechar_slots == 1:    
