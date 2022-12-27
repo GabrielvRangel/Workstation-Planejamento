@@ -30,7 +30,10 @@ class Slots():
             horario = slot_da_agenda_selecionada['date'] 
             tabela_slots_da_agenda.append({'id_slot':slot_id,'data': data,'horario': str(horario),'area': area,'hub': hub,'regime': regime,'produto': bu,'id_tecnica': id_tecnica,'tecnica': tecnica})
             quantidade_slots_abertos = quantidade_slots_abertos - 1
-        Banco_de_dados.inserirdados(tabela_slots_da_agenda, 'bi')
+        subiu_slots_na_tabela = Slots().verificar_se_id_slots_subiu_na_tabela(slot_id)
+        while subiu_slots_na_tabela == 'Não':
+            Banco_de_dados.inserirdados(tabela_slots_da_agenda, 'bi')
+            subiu_slots_na_tabela = Slots().verificar_se_id_slots_subiu_na_tabela(slot_id)
         return print('Slots registrados no banco com sucesso!')
 
     def abertura_minima_automatica(self, hub, bu, dias, range_dias, classificacao_minima, classificacao_maxima, duracao):
@@ -114,6 +117,17 @@ class Slots():
         token = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={token}'
         return token
 
+    def verificar_se_id_slots_subiu_na_tabela(self, id_slot):
+        consultar_tabela_workstation_id_slot = f"""
+        select * from workstation.slots_abertos
+        where id_slot = '{id_slot}'
+        """
+        tabela_workstation_id_slot = Banco_de_dados.consulta('bi', consultar_tabela_workstation_id_slot)
+        if len(tabela_workstation_id_slot) > 0:
+            subiu_slots_na_tabela = 'Sim'
+        elif len(tabela_workstation_id_slot) == 0:
+            subiu_slots_na_tabela = 'Não'
+        return subiu_slots_na_tabela
 class SalesForce():
     def retornar_pedido_reagendamento_salesforce(self, voucher):
         consultar_pedido_reagendamento_salesforce = f"""
