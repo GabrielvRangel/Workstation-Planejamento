@@ -93,7 +93,19 @@ def abrirslots():
     id_parceiro = Area.retorna_id_parceiro(area)
     print('próximo de abrir agenda...')
     Agenda.registrar_agenda(data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime)
-    return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
+    return redirect("https://workstation-planejamen to.herokuapp.com/", code=302)
+
+
+@app.route("/fechar_agenda")
+def fechar_agenda():   
+    token = Slots.retornar_token()
+    id_agenda = int(request.args.get('id_agenda'))
+    id_tecnica = int(request.args.get('id_tecnica'))
+    nome_tecnica = request.args.get('nome_tecnica') 
+    hub = request.args.get('hub')
+    data = request.args.get('data')
+    Slots.fechar_slots(id_agenda, token, id_tecnica, nome_tecnica, hub, data)
+    return "Slots da técnica " + nome_tecnica + " do hub " + hub + " na data " + data + " foram deletados com sucesso!"
 
 # @app.route("/abrirslotsminimos", methods=["GET","POST"])
 # def abrirslotsminimos():

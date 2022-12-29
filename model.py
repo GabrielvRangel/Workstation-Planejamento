@@ -108,6 +108,31 @@ class Slots():
         Banco_de_dados.remover_dados(id_tecnica, hub, data)
         return print('Todos os slots da tecnica ' + str(nome_tecnica) + ' foram fechados com sucesso!')
 
+    def fechar_slots_sem_agenda_na_tabela_workstation(self, token):
+        consulta_tabela_slots_abertos_fora_workstation = f"""
+        select id_agenda, "HUB", sum(a.vendido) as slots_vendidos, count(a.vendido) as quantidade_slots from (
+        select spss.id as id_slot, schedule_booking_id as id_agenda, sc."id" as voucher, parceiro_nome, "HUB", slot_date - INTERVAL '3 hours' as slot_date, parceiro_tipo, wsa.tecnica,
+        case when call_product_id is not null then 1 else 0 end as vendido
+        from sp_product_schedule_slots spss 
+        left join dim_parceiros dp
+        on spss.supplier_id = dp.id_parceiro
+        left join sp_calls sc
+        on sc.service_id = spss.call_product_id
+        left join workstation.slots_abertos wsa
+        on wsa.id_slot = spss.id
+        where slot_date::date > current_date and "HUB" != 'Alphaville' and wsa.tecnica is null and schedule_booking_id is not null) a
+        group by a.id_agenda, a."HUB", a.parceiro_tipo
+        """
+        tabela_slots_abertos_fora_workstation = Banco_de_dados.consulta('bi', consulta_tabela_slots_abertos_fora_workstation)
+        tabela_slots_abertos_fora_workstation = tabela_slots_abertos_fora_workstation.loc[(tabela_slots_abertos_fora_workstation['quantidade slots'] >= 3) & (tabela_slots_abertos_fora_workstation['slots_vendidos'] == 0)]
+        quantidade_agendas = len(tabela_slots_abertos_fora_workstation)
+        print('Vou começar a fechar os slots...')
+        while quantidade_agendas > 0:
+            id_agenda = quantidade_agendas.iloc[quantidade_agendas - 1]['id_agenda']
+            url = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings/{id_agenda}?session_token={token}'
+            requests.delete(url)
+        return print('Todos os slots da lista foram fechados com sucesso!')
+        
     def retornar_token(self):
         consulta_tabela_token = f"""
         select remember_token from users where username = 'gabriel.rangel@beepsaude.com.br'
