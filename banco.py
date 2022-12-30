@@ -23,7 +23,7 @@ class Banco_de_dados():
         self.tech = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
         # self.bi = sqlalchemy.create_engine(f"""postgresql://Logistica:beep%40saude@tableau-bi.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beepsaude""", pool_pre_ping=True)
         # self.tech = sqlalchemy.create_engine(f"""postgresql://awsuser:72Fk2m1Jx08i@beep-server-production-replica-02.coxxaz1blvi6.us-east-1.rds.amazonaws.com/beep_server_production""", pool_pre_ping=True)
- 
+
     def consulta(self, servidor, consulta):
         if servidor == 'tech':
             servidor = self.tech

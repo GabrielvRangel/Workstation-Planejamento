@@ -114,7 +114,7 @@ class Slots():
         select spss.id as id_slot, schedule_booking_id as id_agenda, sc."id" as voucher, parceiro_nome, "HUB", slot_date - INTERVAL '3 hours' as slot_date, parceiro_tipo, wsa.tecnica,
         case when call_product_id is not null then 1 else 0 end as vendido
         from sp_product_schedule_slots spss 
-        left join dim_parceiros dp
+        left join dim_parceiros dp 
         on spss.supplier_id = dp.id_parceiro
         left join sp_calls sc
         on sc.service_id = spss.call_product_id
@@ -139,7 +139,6 @@ class Slots():
         """
         tabela_token = Banco_de_dados.consulta('tech', consulta_tabela_token)
         token = tabela_token.iloc[0]['remember_token']
-        token = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={token}'
         return token
 
     def verificar_se_id_slots_subiu_na_tabela(self, id_slot):
@@ -503,6 +502,7 @@ class Agenda():
         print(tecnica)
         print('Consultando token...')
         token = Slots().retornar_token()
+        token = f'https://api.beepapp.com.br/api/v8/booking_management/schedule_bookings?session_token={token}'
         print('Agenda registrada com sucesso.')
         Slots().abrirslots(f'{data}', f'{regime}', f'{produto}', id_parceiro, token, slots_agenda, f'{area}', f'{hub}', id_tecnica, tecnica)
  
