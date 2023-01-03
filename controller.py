@@ -24,6 +24,7 @@ def index():
 def filtrar():
     date = request.args.get('date')
     regiao = request.args.get('região')
+    global bu
     bu = request.args.get('bu')
     if not date or regiao == "Escolha a região" or bu == "Escolha o produto":
         return render_template("index.html", regiões= lista_macro_regiao, bus= lista_bu)
@@ -83,7 +84,7 @@ def abrirslots():
     area = request.args.get('lin')
     id_tecnica = request.args.get('id_técnica')
     tecnica = request.args.get('técnica')
-    produto = request.args.get('produto')
+    produto = bu
     regime = request.args.get('regime')
     inicio_regime = request.args.get('inicioregime')
     fim_regime = request.args.get('fimregime')
@@ -93,7 +94,7 @@ def abrirslots():
     id_parceiro = Area.retorna_id_parceiro(area)
     print('próximo de abrir agenda...')
     Agenda.registrar_agenda(data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime)
-    return redirect("https://workstation-planejamen to.herokuapp.com/", code=302)
+    return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
 
 @app.route("/fechar_agenda")

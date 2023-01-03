@@ -232,10 +232,10 @@ class Agenda():
                         permissao_fechar_slots = 0
                         lista_vouchers = Agenda().retornar_lista_vouchers_agenda(data, hub, bu, id_tecnica)
                         quantidade_voucher = 0
-                        tabela_pedido_reagendamento_salesforce = SalesForce().retornar_pedido_reagendamento_salesforce(str(lista_vouchers[quantidade_voucher]))
                         while quantidade_voucher < len(lista_vouchers):
+                            tabela_pedido_reagendamento_salesforce = SalesForce().retornar_pedido_reagendamento_salesforce(str(lista_vouchers[quantidade_voucher]))
                             if len(tabela_pedido_reagendamento_salesforce) > 0:
-                                print('Reagendamento já solicitado')
+                                print('Reagendamento do voucher ' + str(lista_vouchers[quantidade_voucher]) + ' já foi solicitado.')
                             if len(tabela_pedido_reagendamento_salesforce) == 0:
                                 print('Solicitando reagendamento do voucher: ' + str(lista_vouchers[quantidade_voucher]))
                                 mensagem = f"""
@@ -244,7 +244,7 @@ class Agenda():
                                 <p>essa mensagem foi enviada automaticamente pelo workstation, favor tratar o caso solicitado e não responder o email.</p>
                                 """
                                 Banco_de_dados.enviar_email(mensagem, f'Alteração no Atendimento | Voucher: {lista_vouchers[quantidade_voucher]} | {data} | WS') 
-                                quantidade_voucher = quantidade_voucher + 1           
+                            quantidade_voucher = quantidade_voucher + 1           
                     if len(tabela_agendas_slots_abertos_horario_aproximado) == 0 and quantidade_slots_vendidos >= 8:
                         permissao_fechar_slots = 0
                         tabela_pedido_extra_salesforce = SalesForce().retornar_pedido_extra_salesforce(hub,bu,data,nome_tecnica)
@@ -259,6 +259,7 @@ class Agenda():
                             """
                             Banco_de_dados.enviar_email(mensagem, f'Pedir equipe Extra - {hub} - {bu} - {data}')
                 if tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['slots'] == 0:
+                    print('TESTE PASSAMOS POR AQUI')
                     permissao_fechar_slots = 1
                 if permissao_fechar_slots == 1:    
                     Slots().fechar_slots(id_agenda, token, id_tecnica, nome_tecnica, hub, data)
@@ -300,6 +301,8 @@ class Agenda():
         tabela_id_agenda = Banco_de_dados.consulta('bi', consultar_id_agenda)
         if len(tabela_id_agenda) > 0:
             id_agenda = tabela_id_agenda.iloc[0]['id_agenda']
+        elif len(tabela_id_agenda) == 0:
+            id_agenda = 0
         return id_agenda
 
     def retornar_tabela_agendas_escala_app(self, data, hub, bu, alterado):
@@ -352,7 +355,7 @@ class Agenda():
         on "HUB" = jeeo.hub
         where escala LIKE '%Técnica%'
         and {self.filtro_status_lancamento_escala_app}
-        and jeeo.escala LIKE '{bu}'
+        and (jeeo.escala LIKE '{bu}' or jeeo.id_cargo = '18394')
         and macro_região = '{regiao}'
         and jeeo.data >= '{data_min}' and jeeo.data <= to_char(DATE '{data_min}', 'YYYY/MM/DD')::date + interval '9 days'
         and jeeo.data > current_date
@@ -651,7 +654,8 @@ class Dashboard():
         return lista_bu
 
 # area = Area()
-# teste = area.retornar_tabela_classificação_areas('São Cristóvão', 'vaccines')
+# teste = area.retornar_tabela_classificação_areas('Barra', 'vaccines')
+# teste = area.remover_areas_nao_utilizadas(teste, 6, 6)
 # print(teste)
 # print(area.remover_areas_nao_utilizadas(teste, 3, 6))
 # agenda = Agenda()
