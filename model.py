@@ -194,7 +194,7 @@ class Agenda():
         and (jeeo.data_fim_lancamento::time - jeeo.data_inicio_lancamento::time) >= '02:00' ))
         """
         self.quantidade_tecnicas_para_uma_contingencia = 10
-            
+
     def fechar_agendas(self, hub, bu, dias):
         dia_hoje = date.today()
         while dias > 0:
@@ -219,7 +219,8 @@ class Agenda():
                     permissao_fechar_slots = 0
                 if (quantidade_slots_vendidos > 0):
                     permissao_fechar_slots = 0
-                    tabela_agendas_slots_abertos_horario_aproximado = Agenda().retornar_tecnica_horario_aproximado_sem_slots_vendidos(data, id_tecnica, hub, bu, horario_min, horario_max)
+                    hubs_permitidos_transferir_agendas = Parametros.retornar_hubs_permitidos_transferir_agendas(hub)
+                    tabela_agendas_slots_abertos_horario_aproximado = Agenda().retornar_tecnica_horario_aproximado_sem_slots_vendidos(data, hubs_permitidos_transferir_agendas, bu, horario_min, horario_max)                    
                     if len(tabela_agendas_slots_abertos_horario_aproximado) > 0:
                         permissao_fechar_slots = 1
                         permissao_substituir_tecnica = 1
@@ -259,7 +260,6 @@ class Agenda():
                             """
                             Banco_de_dados.enviar_email(mensagem, f'Pedir equipe Extra - {hub} - {bu} - {data}')
                 if tabela_agendas_escala_app_alterada.iloc[quantidade_agendas_escala_app_alterada-1]['slots'] == 0:
-                    print('TESTE PASSAMOS POR AQUI')
                     permissao_fechar_slots = 1
                 if permissao_fechar_slots == 1:    
                     Slots().fechar_slots(id_agenda, token, id_tecnica, nome_tecnica, hub, data)
@@ -332,8 +332,15 @@ class Agenda():
             tabela_agendas_workstation = tabela_agendas_workstation[~tabela_agendas_workstation['tecnica'].isin(lista_tecnicas_escala_app)]
         return tabela_agendas_workstation
     
-    def retornar_tecnica_horario_aproximado_sem_slots_vendidos(self, data, id_tecnica, hub, bu, horario_min, horario_max):
-        tabela_agendas_slots_abertos = Agenda().retornar_tabela_agendas_escala_app(data, hub, bu, 0)
+    def retornar_tecnica_horario_aproximado_sem_slots_vendidos(self, data, hubs, bu, horario_min, horario_max):
+        quantidade_hub = 1
+        tabela_agendas_slots_abertos = Agenda().retornar_tabela_agendas_escala_app(data, hubs[0], bu, 0)
+        print('Analisando se tem técnica disponível no hub ' + hubs[0] + '...')
+        while len(hubs) > quantidade_hub:
+            tabela_agendas_slots_abertos_para_juntar_com_a_anterior = Agenda().retornar_tabela_agendas_escala_app(data, hubs[quantidade_hub], bu, 0)
+            tabela_agendas_slots_abertos = pd.concat([tabela_agendas_slots_abertos, tabela_agendas_slots_abertos_para_juntar_com_a_anterior], axis=0)
+            print('Analisando se tem técnica disponível no hub ' + hubs[quantidade_hub] + '...')
+            quantidade_hub = quantidade_hub + 1
         tabela_agendas_slots_abertos_horario_aproximado = tabela_agendas_slots_abertos[(tabela_agendas_slots_abertos['min'] == horario_min) &( tabela_agendas_slots_abertos['max'] == horario_max)]
         tabela_agendas_slots_abertos_horario_aproximado = tabela_agendas_slots_abertos_horario_aproximado[tabela_agendas_slots_abertos_horario_aproximado['slots'] == 0]
         print('Encontrado ' + str(len(tabela_agendas_slots_abertos_horario_aproximado)) + ' técnicas com 0 slots.')

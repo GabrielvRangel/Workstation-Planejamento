@@ -18,3 +18,35 @@ class Parametros_internos():
     def retornar_data_somada(self, data, dias):
         soma = datetime.datetime.strptime(data, '%Y-%m-%d') + datetime.timedelta(days=dias)
         return soma.strftime("%Y-%m-%d")
+
+    def retornar_hubs_permitidos_transferir_agendas(self, hub):
+        if hub == 'São Cristóvão':
+            hubs = ['São Cristóvão', 'Barra'] 
+        if hub == 'Barra':
+            hubs = ['Barra', 'São Cristóvão']
+        if hub == 'Alphaville':
+            hubs = ['Alphaville', 'Vila Olímpia']
+        if hub == 'Tatuapé':
+            hubs = ['Tatuapé', 'São Bernardo do Campo', 'Vila Olímpia']
+        if hub == 'São Bernardo do Campo':
+            hubs = ['São Bernardo do Campo', 'Tatuapé', 'Vila Olímpia']
+        if hub == 'Vila Olímpia':
+            hubs = ['Vila Olímpia', 'Alphaville', 'Tatuapé', 'São Bernardo do Campo']
+        if hub == 'Campinas':
+            hubs = ['Campinas']
+        if hub == 'Cabo Frio':
+            hubs = ['Cabo Frio']
+        if hub == 'Brasília':
+            hubs = ['Brasília']
+        if hub == 'Curitiba':
+            hubs = ['Curitiba']
+        if hub == 'Recife':
+            hubs = ['Recife']
+        return hubs
+
+
+
+# Parametros_internos().retornar_hub_regiao('Alphaville')
+
+
+
