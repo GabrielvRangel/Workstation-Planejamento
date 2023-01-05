@@ -68,7 +68,7 @@ class Slots():
                     eixo_tabela_area = eixo_tabela_area + 1
                     permissao_abrir_slots = 0
                 if permissao_abrir_slots == 1:
-                    Agenda().registrar_agenda(tecnicas_disponiveis_dia_abertura.iloc[0]['data'], bu, tabela_classificacao_areas.iloc[eixo_tabela_area]['id_parceiro'], tabela_classificacao_areas.iloc[eixo_tabela_area]['área'], hub, duracao, tecnicas_disponiveis_dia_abertura.iloc[0]['id_técnica'], tecnicas_disponiveis_dia_abertura.iloc[0]['técnica'], Parametros.retornar_regime(tecnicas_disponiveis_dia_abertura.iloc[0]['escala']), tecnicas_disponiveis_dia_abertura.iloc[0]['hr_entrada'], tecnicas_disponiveis_dia_abertura.iloc[0]['hr_saída'])
+                    Agenda().registrar_agenda(tecnicas_disponiveis_dia_abertura.iloc[0]['data'], bu, tabela_classificacao_areas.iloc[eixo_tabela_area]['id_parceiro'], tabela_classificacao_areas.iloc[eixo_tabela_area]['área'], hub, hub, duracao, tecnicas_disponiveis_dia_abertura.iloc[0]['id_técnica'], tecnicas_disponiveis_dia_abertura.iloc[0]['técnica'], Parametros.retornar_regime(tecnicas_disponiveis_dia_abertura.iloc[0]['escala']), tecnicas_disponiveis_dia_abertura.iloc[0]['hr_entrada'], tecnicas_disponiveis_dia_abertura.iloc[0]['hr_saída'])
                     print('Slots na ' + tabela_classificacao_areas.iloc[eixo_tabela_area]['área'] + ' abertos com sucesso!')
                 eixo_tabela_area = eixo_tabela_area + 1
             dias = dias - range_dias
@@ -96,7 +96,7 @@ class Slots():
                 quantidade_linhas_tabela_taxa_ocupacao_score = 0
                 permissao_abrir_slots = 0
             if permissao_abrir_slots == 1:
-                Agenda().registrar_agenda(tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['slot_date'], bu, str(tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['ID Área']), tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['parceiro_nome'], hub, duracao, tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['id_técnica'], tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['técnica'], Parametros.retornar_regime(tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['escala']), tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['hr_entrada'], tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['hr_saída'])
+                Agenda().registrar_agenda(tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['slot_date'], bu, str(tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['ID Área']), tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['parceiro_nome'], hub, hub, duracao, tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['id_técnica'], tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['técnica'], Parametros.retornar_regime(tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['escala']), tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['hr_entrada'], tabela_agendas_hub_tecnicas_disponiveis.iloc[0]['hr_saída'])
                 print('Slots na ' + tabela_taxa_ocupacao_score.iloc[quantidade_linhas_tabela_taxa_ocupacao_score - 1]['parceiro_nome'] + ' abertos com sucesso!')
                 quantidade_linhas_tabela_taxa_ocupacao_score = quantidade_linhas_tabela_taxa_ocupacao_score - 1
             return(print('Dia ' + str(dia_abertura_slot) + ' verificado.'))
@@ -486,7 +486,7 @@ class Agenda():
         nome_agenda_contingencia = tabela_hibridas_hub.head(quantidade_contingencia - 1)
         return nome_agenda_contingencia
 
-    def registrar_agenda(self, data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime):
+    def registrar_agenda(self, data, produto, id_parceiro, area, hub, hub_origem, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime):
         print('Você está abrindo slot no hub ' + hub + ' dentro da área: ' + area + '.')
         print(' O ID do parceiro da área é: ' + id_parceiro + '.')
         slot_atual_texto = str(inicio_regime)
@@ -498,6 +498,13 @@ class Agenda():
         quantidade_slots = 0
         slots_agenda = []
         almoco = 0
+        if hub != hub_origem:
+            pular_primeiro_e_ultimo_slot = 1
+        if hub == hub_origem:
+            pular_primeiro_e_ultimo_slot = 0
+        if pular_primeiro_e_ultimo_slot == 1:
+            slot_atual_time = slot_atual_time + timedelta(hours=0, minutes=duracao, seconds=0)
+            fim_regime_time = fim_regime_time - timedelta(hours=0, minutes=duracao, seconds=0)
         if (fim_regime_time > datetime.strptime("14:00:00", "%H:%M:%S")): 
             almoco = 1
         while(slot_atual_time < fim_regime_time - timedelta(hours=0, minutes=duracao+30, seconds=0)):

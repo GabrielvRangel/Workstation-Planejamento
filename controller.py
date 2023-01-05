@@ -87,15 +87,16 @@ def abrirslots():
     inicio_regime = request.args.get('inicioregime')
     fim_regime = request.args.get('fimregime')
     hub = request.args.get('hub')
+    hub_origem = request.args.get('hub_origem')
     duracao = int(request.args.get('duração'))
     regime = Parametros.retornar_regime(regime)
     id_parceiro = Area.retorna_id_parceiro(area)
-    if 'lab' in area:
+    if area.find("LAB") != -1:
         produto = 'laboratories'
-    if 'vac' in area:
+    if area.find("VAC") != -1:
         produto = 'vaccines'
     print('próximo de abrir agenda...')
-    Agenda.registrar_agenda(data, produto, id_parceiro, area, hub, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime)
+    Agenda.registrar_agenda(data, produto, id_parceiro, area, hub, hub_origem, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime)
     return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
 
