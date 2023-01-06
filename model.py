@@ -320,8 +320,7 @@ class Agenda():
         select colaborador, id_colaborador, hub, data
         from jornadas_escala.escala_operacional jeeo
         where jeeo.escala like '%Técnica%' 
-        and jeeo.escala like '{bu}'
-        and jeeo.hub = '{hub}'
+        and (jeeo.escala like '{bu}' or jeeo.id_cargo = '18394')
         and jeeo.data = '{data}'
         and {self.filtro_status_lancamento_escala_app}
         """
@@ -341,6 +340,7 @@ class Agenda():
             tabela_agendas_slots_abertos = pd.concat([tabela_agendas_slots_abertos, tabela_agendas_slots_abertos_para_juntar_com_a_anterior], axis=0)
             print('Analisando se tem técnica disponível no hub ' + hubs[quantidade_hub] + '...')
             quantidade_hub = quantidade_hub + 1
+        print(tabela_agendas_slots_abertos)
         tabela_agendas_slots_abertos_horario_aproximado = tabela_agendas_slots_abertos[(tabela_agendas_slots_abertos['min'] == horario_min) &( tabela_agendas_slots_abertos['max'] == horario_max)]
         tabela_agendas_slots_abertos_horario_aproximado = tabela_agendas_slots_abertos_horario_aproximado[tabela_agendas_slots_abertos_horario_aproximado['slots'] == 0]
         print('Encontrado ' + str(len(tabela_agendas_slots_abertos_horario_aproximado)) + ' técnicas com 0 slots.')
@@ -411,7 +411,7 @@ class Agenda():
         left join dim_parceiros
         on "HUB" = jeeo.hub
         where escala LIKE '%Técnica%'
-        and jeeo.escala LIKE '{bu}'
+        and (jeeo.escala LIKE '{bu}' or jeeo.id_cargo = '18394')
         and jeeo.hub = '{hub}'
         and jeeo.data >= '{data_min}' and jeeo.data <= '{data_max}' 
         and {self.filtro_status_lancamento_escala_app}
@@ -573,6 +573,7 @@ class Area():
         return tabela_areas_classificadas
 
     def retorna_tabela_prioridade_score_areas(self, data, região, bu):
+        bu_abreviado = Parametros.retornar_bu(bu, 'escala app') 
         bu = Parametros.retornar_bu(bu, 'beep')
         consulta_areas_score = f"""
         select macro_região as região, lmsa."HUB" as hub,"Área" as área, max(SUBSTRING("Score"::text from 1 for 5)::numeric) as score, "Data da Agenda" as data
@@ -586,7 +587,24 @@ class Area():
         group by macro_região, lmsa."HUB", "Área", "Data da Agenda"
         order by "Data da Agenda", lmsa."HUB", "Área"
         """
+        consultar_todas_areas_existentes_score = f"""
+        select "macro_região" as região, lmsa."HUB" as hub, "parceiro_nome" as área, 0 as score, "Data da Agenda" as data
+        from  dim_parceiros dp
+        left join last_mile.sugestoes_alocacao lmsa
+        on dp."HUB" = lmsa."HUB"
+        where lmsa."Turno da Agenda" = 'Manhã'
+        and dp."parceiro_nome" like '{bu_abreviado}'
+        and lmsa."Data da Agenda" >= '{data}' and "Data da Agenda" <= to_char(DATE '{data}', 'YYYY/MM/DD')::date + interval '9 days'
+        and macro_região = '{região}'
+        and parceiro_nome not like '%Global%' and parceiro_nome not like '%[%' and parceiro_nome not like '%]%' and parceiro_nome not like '%teste1%' and parceiro_nome not like '%[desativado]%' and parceiro_nome not like '%Beep%'
+        group by dp."macro_região", lmsa."HUB", dp."parceiro_nome", "Data da Agenda"
+        order by "data"
+        """
         tabela_prioridade_score_areas = Banco_de_dados.consulta('bi', consulta_areas_score)
+        tabela_todas_areas_existentes_score = Banco_de_dados.consulta('bi', consultar_todas_areas_existentes_score)
+        tabela_areas_score_junto_com_tabela_todas_areas_existentes = pd.concat([tabela_prioridade_score_areas, tabela_todas_areas_existentes_score])
+        tabela_prioridade_score_areas = tabela_areas_score_junto_com_tabela_todas_areas_existentes.drop_duplicates(subset=['área', 'data'], keep='first')
+        print(tabela_prioridade_score_areas)
         tabela_prioridade_score_areas_tratamento_colunas = pd.pivot_table(tabela_prioridade_score_areas, index=["região", "hub", "área"], columns=["data"], values=["score"])
         tabela_prioridade_score_areas = tabela_prioridade_score_areas_tratamento_colunas.set_axis(tabela_prioridade_score_areas_tratamento_colunas.columns.tolist(), axis=1).reset_index()
         tabela_prioridade_score_areas.columns = ['região', 'hub', 'área', str(Parametros.retornar_data_somada(data, 0)), str(Parametros.retornar_data_somada(data, 1)), str(Parametros.retornar_data_somada(data, 2)), str(Parametros.retornar_data_somada(data, 3)), str(Parametros.retornar_data_somada(data, 4)), str(Parametros.retornar_data_somada(data, 5)), str(Parametros.retornar_data_somada(data, 6)), str(Parametros.retornar_data_somada(data, 7)), str(Parametros.retornar_data_somada(data, 8)), str(Parametros.retornar_data_somada(data, 9))]

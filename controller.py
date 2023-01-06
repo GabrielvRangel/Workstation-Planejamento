@@ -91,6 +91,8 @@ def abrirslots():
     duracao = int(request.args.get('duração'))
     regime = Parametros.retornar_regime(regime)
     id_parceiro = Area.retorna_id_parceiro(area)
+    print(hub)
+    print(hub_origem)
     if area.find("LAB") != -1:
         produto = 'laboratories'
     if area.find("VAC") != -1:
@@ -99,7 +101,7 @@ def abrirslots():
     Agenda.registrar_agenda(data, produto, id_parceiro, area, hub, hub_origem, duracao, id_tecnica, tecnica, regime, inicio_regime, fim_regime)
     return redirect("https://workstation-planejamento.herokuapp.com/", code=302)
 
-
+ 
 @app.route("/fechar_agenda")
 def fechar_agenda():   
     token = Slots.retornar_token()

@@ -21,7 +21,7 @@ class Banco_de_dados():
         sp_banco =  os.environ['sp_banco']
         self.bi = create_engine(f"""postgresql://{usuario}:{senha}@{servidor}/{banco}""", pool_pre_ping=True)
         self.tech = create_engine(f"""postgresql://{sp_usuario}:{sp_senha}@{sp_servidor}/{sp_banco}""", pool_pre_ping=True)
-        
+       
     def consulta(self, servidor, consulta):
         if servidor == 'tech':
             servidor = self.tech
